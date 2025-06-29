@@ -1,0 +1,1 @@
+from api.middlewares.auth_middleware import jwt_authentication
