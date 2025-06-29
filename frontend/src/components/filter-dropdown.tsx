@@ -37,8 +37,8 @@ export function FilterDropdown({ filters, onFiltersChange }: FilterDropdownProps
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 cursor-pointer text-gray-400 hover:text-gray-200 hover:bg-gray-700">
-          <Filter className="h-4 w-4" />
+        <Button variant="ghost" size="sm" className="gap-2 text-[0.8rem] cursor-pointer text-gray-400 hover:text-gray-200 hover:bg-gray-700">
+          <Filter size={8}/>
           Filter
         </Button>
       </DropdownMenuTrigger>

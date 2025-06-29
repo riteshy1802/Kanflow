@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dot, ChevronsUp, ChevronsDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { getColorForName } from "@/functions/getAvatarColor"
 
 interface Task {
   id: string
@@ -135,7 +136,7 @@ export function TaskCard({ task, members, isActive, onClick, onUpdate }: TaskCar
         <div className="flex -space-x-1">
           {taskMembers.slice(0, 3).map((member) => (
             <Avatar key={member.id} className="h-6 w-6 border border-gray-800">
-              <AvatarFallback className="bg-[#4b06c2] text-white text-[0.5rem] font-medium">{member.avatar}</AvatarFallback>
+              <AvatarFallback style={{backgroundColor:getColorForName(member.name)}} className="text-white text-[0.5rem] font-medium">{member.avatar}</AvatarFallback>
             </Avatar>
           ))}
           {taskMembers.length > 3 && (

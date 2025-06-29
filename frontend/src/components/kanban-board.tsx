@@ -8,7 +8,9 @@ import { FilterDropdown } from "@/components/filter-dropdown"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Activity, Trash2, X } from "lucide-react"
+import { Pen, Trash2, X } from "lucide-react"
+import { getColorForName } from "@/functions/getAvatarColor"
+import { Input } from "./ui/input"
 
 interface Task {
   id: string
@@ -46,7 +48,9 @@ const COLUMNS = [
 
 export function KanbanBoard({ boardId }: KanbanBoardProps) {
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks")
+  const [newBoardName, setNewBoardName] = useState("")
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isEditingName, setIsEditingName] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([
     {
@@ -145,8 +149,7 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
 
-  const boardName = "Design System Project"
-
+  const [boardName, setBoardName] = useState("Design System Project")
   const handleTaskUpdate = (updatedTask: Task) => {
     setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)))
   }
@@ -170,7 +173,32 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
         {/* Header */}
         <div className="px-6 pb-3 pt-6 border-b border-gray-700/20">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <Input
+                  id="board-name"
+                  placeholder="Enter board name"
+                  value={boardName}
+                  onChange={(e) => setBoardName(e.target.value)}
+                  required
+                  className="border-slate-600/50 min-w-88 text-2xl font-bold text-gray-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
+                />
+              ) : (
+                <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
+              )}
+
+              {isEditingName ? (
+                <X
+                  onClick={() => setIsEditingName(false)}
+                  className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
+                />
+              ) : (
+                <Pen
+                  onClick={() => setIsEditingName(true)}
+                  className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
+                />
+              )}
+            </div>
             <div className="flex items-center gap-3">
               {/* Team Avatars */}
               <div className="flex -space-x-2">
@@ -178,7 +206,10 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
                   <Tooltip key={member.id}>
                     <TooltipTrigger>
                       <Avatar className="h-8 w-8 border-2 border-gray-800">
-                        <AvatarFallback className="bg-[#580bdb] text-white text-xs font-medium">
+                        <AvatarFallback
+                          className="text-white text-xs font-medium"
+                          style={{ backgroundColor: getColorForName(member?.name) }}
+                        >
                           {member.avatar}
                         </AvatarFallback>
                       </Avatar>
@@ -194,7 +225,7 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
                   </Avatar>
                 )}
               </div>
-              <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-white">
+              <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
                 Add Member
               </Button>
             </div>
@@ -256,68 +287,68 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
             </div>
           </div>
           ) : (
-            <div className="p-6 overflow-auto h-full">
+            <div className="p-6 overflow-x-hidden h-full">
               <div className="space-y-4">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="grid grid-cols-12 gap-4 items-center p-4 bg-gray-700/30 rounded-lg border border-gray-600"
-            >
-              <div className="col-span-1 flex justify-center">
-                <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-[#580bdb] text-white text-sm font-medium">
-              {member.avatar}
-            </AvatarFallback>
-                </Avatar>
-              </div>
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="grid grid-cols-12 gap-4 items-center p-4 bg-gray-700/30 rounded-lg border border-gray-600"
+                  >
+                    <div className="col-span-1 flex justify-center">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback style={{backgroundColor:getColorForName(member.name)}} className="text-white text-sm font-medium">
+                          {member.avatar}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
 
-              <div className="col-span-3">
-                <p className="font-medium text-sm text-gray-100 truncate" title={member.name}>
-            {member.name}
-                </p>
-              </div>
+                    <div className="col-span-3">
+                      <p className="font-medium text-sm text-gray-100 truncate" title={member.name}>
+                        {member.name}
+                      </p>
+                    </div>
 
-              <div className="col-span-3">
-                <p className="text-sm text-gray-400 truncate" title={member.email}>
-            {member.email}
-                </p>
-              </div>
+                    <div className="col-span-3">
+                      <p className="text-sm text-gray-400 truncate" title={member.email}>
+                  {member.email}
+                      </p>
+                    </div>
 
-              <div className="col-span-2 flex justify-center">
-                <span
-            className={`px-2 py-1 text-xs rounded-full capitalize ${
-              member.role === "admin" 
-                ? "bg-[#580bdb]/30 text-white" 
-                : "bg-gray-600 text-white"
-            }`}
-                >
-            {member.role}
-                </span>
-              </div>
+                    <div className="col-span-2 flex justify-center">
+                      <span
+                        className={`px-5 py-2 text-xs rounded-full capitalize ${
+                        member.role === "admin" 
+                            ? "bg-[#580bdb]/50 text-white" 
+                            : "bg-gray-600 text-white"
+                        }`}
+                      >
+                        {member.role}
+                      </span>
+                    </div>
 
-              <div className="col-span-2">
-                <p className="text-xs text-gray-500">
-            Joined {member.joinedAt}
-                </p>
-              </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">
+                        Joined {member.joinedAt}
+                      </p>
+                    </div>
 
-              <div className="col-span-1 flex justify-center">
-                <div className="relative group">
-            <Button
-              variant="ghost"
-              // onClick={() => handleRemoveMember(member.id)}
-              className="p-2 cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Remove {member.name}
-            </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                    <div className="col-span-1 flex justify-center">
+                      <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    // onClick={() => handleRemoveMember(member.id)}
+                    className="p-2 cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Remove {member.name}
+                  </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

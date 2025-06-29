@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { getColorForName } from "@/functions/getAvatarColor"
 
 interface User {
   id: string
@@ -89,7 +90,7 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                 variant="ghost"
                 className="w-full justify-between cursor-pointer text-[0.8rem] hover:bg-white/10 text-gray-200 hover:text-white"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex text-xs items-center gap-2">
                   <Folder className="h-4 w-4" />
                   My Boards
                 </div>
@@ -104,7 +105,7 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                     key={board.id}
                     variant="ghost"
                     size="sm"
-                    className={`w-[90%] max-w-full cursor-pointer justify-start text-xs hover:bg-white/10 text-gray-300 hover:text-white ${
+                    className={`w-[90%] max-w-full cursor-pointer justify-start text-[0.7rem] hover:bg-white/10 text-gray-300 hover:text-white ${
                       selectedBoard === board.id ? "bg-white/10 font-semibold text-white" : ""
                     }`}
                     onClick={() => onSelectBoard(board.id)}
@@ -123,7 +124,7 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                 variant="ghost"
                 className="w-full justify-between cursor-pointer text-[0.8rem] hover:bg-white/10 text-gray-200 hover:text-white"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex text-xs items-center gap-2">
                   <Share2 className="h-4 w-4" />
                   Shared with Me
                 </div>
@@ -138,7 +139,7 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                     key={board.id}
                     variant="ghost"
                     size="sm"
-                    className={`w-[90%] cursor-pointer max-w-full justify-start text-xs hover:bg-white/10 text-gray-300 hover:text-white ${
+                    className={`w-[90%] cursor-pointer max-w-full justify-start text-[0.7rem] hover:bg-white/10 text-gray-300 hover:text-white ${
                       selectedBoard === board.id ? "bg-white/10 font-semibold text-white" : ""
                     }`}
                     onClick={() => onSelectBoard(board.id)}
@@ -153,11 +154,11 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
             variant="ghost"
             className="w-full flex px-3 text-[0.8rem] cursor-pointer justify-between items-center hover:bg-white/10 text-gray-200 hover:text-white"
           >
-            <div className="block flex items-center gap-2">
+            <div className="block text-xs flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
             </div>
-            <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.4rem] font-medium">
+            <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.6rem] font-medium">
               1
             </div>
           </Button>
@@ -170,7 +171,7 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
               <Tooltip>
                 <TooltipTrigger>
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-[#4B06C2] text-white text-sm font-medium">
+                    <AvatarFallback style={{backgroundColor:getColorForName(user?.name)}} className={`bg-[${getColorForName(user?.name)}] text-white text-sm font-medium`}>
                       {user?.avatar || "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -180,25 +181,18 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                 </TooltipContent>
               </Tooltip>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-gray-200">{user?.name}</p>
-                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                <p className="text-xs font-medium truncate text-gray-200">{user?.name}</p>
+                <p className="text-[0.7rem] text-gray-400 truncate">{user?.email}</p>
               </div>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="hover:bg-red-500/20 cursor-pointer hover:text-red-400 text-gray-400"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-gray-800 text-gray-100 border-gray-700">
-                <p>Logout</p>
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="hover:bg-red-500/20 cursor-pointer hover:text-red-400 text-gray-400"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

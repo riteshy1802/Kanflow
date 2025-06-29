@@ -9,6 +9,7 @@ import { X, Edit3, ChevronsUp, Dot, ChevronsDown, Calendar, User, Tag, AlertCirc
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar24 } from "./DatePicker"
 import { Input } from "./ui/input"
+import { getColorForName } from "@/functions/getAvatarColor"
 
 interface Task {
   id: string
@@ -151,7 +152,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
                 {assignee && (
                   <>
                     <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-[#5e00ff] text-white text-[0.5rem] font-medium">
+                      <AvatarFallback style={{backgroundColor:getColorForName(assignee.name)}} className="text-white text-[0.5rem] font-medium">
                         {assignee.avatar}
                       </AvatarFallback>
                     </Avatar>
@@ -224,7 +225,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
                   onUpdate(updatedTask)
                 }}
               >
-                <SelectTrigger className={`w-36 cursor-pointer h-6 px-2 gap-1 ${priorityColor} border-gray-600`}>
+                <SelectTrigger className={`w-32 cursor-pointer text-[0.8rem] h-6 px-2 gap-1 ${priorityColor} border-gray-600`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
