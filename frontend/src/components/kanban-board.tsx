@@ -8,7 +8,7 @@ import { FilterDropdown } from "@/components/filter-dropdown"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Pen, Trash2, X } from "lucide-react"
+import { Download, Pen, Trash2, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
 
@@ -257,6 +257,16 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              {activeTab === "tasks" && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Download className="h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-800 text-gray-100 border-gray-700">
+                    <p>Export Board as PDF</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {activeTab === "tasks" && <FilterDropdown filters={filters} onFiltersChange={setFilters} />}
             </div>
           </div>
