@@ -34,9 +34,10 @@ CORS_ALLOWED_ORIGINS = [
 
 COOKIE_SETTINGS = {
     'httponly': True,
-    'secure': False,
-    'samesite': 'Lax',
-    'max_age': 7 * 24 * 60 * 60
+    'secure': True,
+    'samesite': None,
+    'max_age': 7 * 24 * 60 * 60,
+    'path': '/'
 }
 
 REST_FRAMEWORK = {

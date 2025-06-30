@@ -1,5 +1,5 @@
 import bcrypt
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from api.models.user import User
@@ -7,6 +7,7 @@ from api.utils.jwt_utils import generate_token,verify_token
 from api.middlewares.auth_middleware import jwt_authentication
 from django.conf import settings
 import traceback
+from rest_framework.permissions import IsAuthenticated
 from api.serializers.user_serializer import UserSerializer
 
 @api_view(["POST"])
@@ -66,14 +67,15 @@ def login(request):
     tokens = generate_token(user.userId)
     payload = {"access_token":tokens['access_token']}
     res = Response({"success":True, "message":"Login successful", "payload":payload}, status=status.HTTP_200_OK)
-
+    
     res.set_cookie(
         key="refresh_token",
         value=tokens["refresh_token"],
         httponly=settings.COOKIE_SETTINGS['httponly'],
         secure=settings.COOKIE_SETTINGS['secure'],
         samesite=settings.COOKIE_SETTINGS['samesite'],
-        max_age=settings.COOKIE_SETTINGS['max_age']
+        max_age=settings.COOKIE_SETTINGS['max_age'],
+        path=settings.COOKIE_SETTINGS['path']
     )
 
     return res
