@@ -1,13 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { KanbanBoard } from "@/components/kanban-board"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CreateKanbanForm } from "@/components/create-kanban-form"
+import { useSearchParams } from "next/navigation"
+import Notifications from "@/components/notifications"
 
 export default function HomePage() {
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const searchParams = useSearchParams();
+  const workspace_id = searchParams.get('workspace_id');
+  const [openNotifications, setOpenNotifications] = useState(false);
+
+  useEffect(()=>{
+    console.log("Workspace : ", workspace_id);
+  },[workspace_id]);
 
   return (
     <div className="flex h-screen bg-gray-900">
@@ -16,11 +25,15 @@ export default function HomePage() {
         onSelectBoard={setSelectedBoard}
         onCreateKanban={() => setShowCreateForm(true)}
         showCreateForm={showCreateForm}
+        setShowCreateForm={setShowCreateForm}
       />
       <main className="flex-1 overflow-hidden">
         {showCreateForm ? (
-          <CreateKanbanForm onClose={() => setShowCreateForm(false)} />
-        ) : selectedBoard ? (
+          <>
+            <CreateKanbanForm onClose={() => setShowCreateForm(false)} />
+            <Notifications/>
+          </>
+        ) : (selectedBoard || workspace_id) ? (
           <KanbanBoard boardId={selectedBoard} />
         ) : (
           <div className="flex items-center justify-center h-full bg-[#100f12]">

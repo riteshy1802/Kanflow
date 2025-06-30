@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { KanbanColumn } from "@/components/kanban-column"
 import { TaskDetail } from "@/components/task-detail"
 import { AddMemberModal } from "@/components/add-member-modal"
@@ -11,6 +11,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Download, Pen, Trash2, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
+import { useQuery } from "@tanstack/react-query"
+import { useSearchParams } from "next/navigation"
+import { get, post } from "@/actions/common"
+import { GET_WORKSPACE } from "@/constants/API_Endpoints"
+import { Skeleton } from "./ui/skeleton"
 
 interface Task {
   id: string
@@ -35,7 +40,7 @@ interface Member {
 }
 
 interface KanbanBoardProps {
-  boardId: string
+  boardId?: string | null
 }
 
 const COLUMNS = [
@@ -48,10 +53,11 @@ const COLUMNS = [
 
 export function KanbanBoard({ boardId }: KanbanBoardProps) {
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks")
-  const [newBoardName, setNewBoardName] = useState("")
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isEditingName, setIsEditingName] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
+  const searchParams = useSearchParams();
+  const workspaceId = searchParams.get('workspace_id');
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "1",
@@ -149,7 +155,27 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
 
-  const [boardName, setBoardName] = useState("Design System Project")
+  const [boardName, setBoardName] = useState("")
+
+  const getWorkspaceData = async () => {
+    try {
+      const res = await post(GET_WORKSPACE, { workspaceId });
+      return res.payload;
+    } catch (error) {
+      console.log("Error while fetching workspace data:", error);
+    }
+  };
+  
+  const { data: workspaceData, isLoading: isFetchingWorkspaceData } = useQuery({
+    queryKey: ['workspace-data', workspaceId],
+    queryFn: getWorkspaceData,
+    enabled: !!workspaceId,
+  });
+  
+  useEffect(()=>{
+    setBoardName(workspaceData?.name);
+  },[workspaceData]);
+
   const handleTaskUpdate = (updatedTask: Task) => {
     setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)))
   }
@@ -175,29 +201,32 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               {isEditingName ? (
-                <Input
-                  id="board-name"
-                  placeholder="Enter board name"
-                  value={boardName}
-                  onChange={(e) => setBoardName(e.target.value)}
-                  required
-                  className="border-slate-600/50 min-w-88 text-2xl font-bold text-gray-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
-                />
+                <div className="w-full flex items-center">
+                  <Input
+                    id="board-name"
+                    placeholder="Enter board name"
+                    value={boardName}
+                    onChange={(e) => setBoardName(e.target.value)}
+                    className="border-slate-600/50 min-w-88 text-2xl font-bold text-gray-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
+                  />
+                  <X
+                    onClick={() => setIsEditingName(false)}
+                    className="inline-block ml-2 h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-200"
+                  />
+                </div>
               ) : (
-                <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
+                isFetchingWorkspaceData ? 
+                  <Skeleton className="h-8 w-72 rounded-md bg-gray-600/50"/>
+                :
+                  <div className="w-full flex items-center">
+                    <h1 className="text-2xl font-bold text-gray-100">{workspaceData?.name}</h1>
+                    <Pen
+                      onClick={() => setIsEditingName(true)}
+                      className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
+                    />
+                  </div>
               )}
 
-              {isEditingName ? (
-                <X
-                  onClick={() => setIsEditingName(false)}
-                  className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
-                />
-              ) : (
-                <Pen
-                  onClick={() => setIsEditingName(true)}
-                  className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
-                />
-              )}
             </div>
             <div className="flex items-center gap-3">
               {/* Team Avatars */}
@@ -364,7 +393,6 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
           )}
         </div>
 
-        {/* Task Detail Slide-out */}
         {selectedTask && (
           <TaskDetail
             task={selectedTask}
@@ -377,14 +405,9 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
           />
         )}
 
-        {/* Add Member Modal */}
         {showAddMember && (
           <AddMemberModal
             onClose={() => setShowAddMember(false)}
-            onAddMembers={(newMembers) => {
-              // Add new members logic here
-              setShowAddMember(false)
-            }}
           />
         )}
       </div>

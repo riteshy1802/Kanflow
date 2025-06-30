@@ -74,3 +74,34 @@ def get_workspace(request):
     except Exception as e:
         print("Error: while getting Workspace : ", str(e))
         return Response({"success": False, "message": "Failed to get Workspace data", "payload": {}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+@jwt_authentication
+def invite_team_members(request):
+    try:
+        data=request.data
+        print("Invites : ", data)
+        workspace_id=data.get('workspaceId')
+        workspace = Workspace.objects.get(workspaceId=workspace_id)
+        team_members = data.get('team_members')
+        team_objs = []
+        for member in team_members:
+            email=member['email']
+            privilege=member['privilege']
+            status=member['status']
+            user=User.objects.filter(email=email).first()
+
+            team_objs.append(
+                TeamMembers(
+                    workspaceId=workspace,
+                    userId=user if user else None,
+                    email=email,
+                    privilege=privilege,
+                    status=status
+                )
+            )
+        TeamMembers.objects.bulk_create(team_objs)
+        return Response({"success": True, "message": "Invites sent successfully"}, status=drf_status.HTTP_201_CREATED)
+    except Exception as e:
+        print("Error while adding team members:", str(e))
+        return Response({"success":False, "message":"Failed to add team members", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)

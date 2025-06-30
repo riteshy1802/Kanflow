@@ -2,6 +2,7 @@ from django.db import models
 from .user import User
 from .workspace import Workspace
 import uuid
+
 class TeamMembers(models.Model):
     class Privilege(models.TextChoices):
         ADMIN = "admin"
@@ -18,6 +19,8 @@ class TeamMembers(models.Model):
     workspaceId = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="member_of_workspace")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     privilege = models.CharField(max_length=10, choices=Privilege.choices, default=Privilege.USER)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "team_members"

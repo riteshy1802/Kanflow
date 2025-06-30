@@ -8,36 +8,91 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
-import { toast } from "sonner"
+import { useFormik } from "formik"
+import { InviteMembersSchema } from "@/schemas/inviteMembersSchema"
+import { InviteMembers, Member } from "@/types/form.types"
+import toast from "react-hot-toast"
+import { post } from "@/actions/common"
+import { SEND_INVITE } from "@/constants/API_Endpoints"
+import { useMutation } from "@tanstack/react-query"
+import { useSearchParams } from "next/navigation"
 
 interface AddMemberModalProps {
   onClose: () => void
-  onAddMembers: (members: Array<{ email: string; role: string }>) => void
 }
 
-export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
-  const [emails, setEmails] = useState<Array<{ email: string; role: string }>>([])
+export function AddMemberModal({ onClose }: AddMemberModalProps) {
   const [currentEmail, setCurrentEmail] = useState("")
-  const [currentRole, setCurrentRole] = useState("user")
+  const [currentRole, setCurrentRole] = useState<"admin" | "user">("user")
+  const [error, setError] = useState("")
+  const searchParams = useSearchParams();
+  const workspace_id = searchParams.get('workspace_id');
 
-  const handleAddEmail = () => {
-    if (currentEmail && !emails.find((e) => e.email === currentEmail)) {
-      setEmails([...emails, { email: currentEmail, role: currentRole }])
-      setCurrentEmail("")
-      setCurrentRole("user")
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  const {mutate:sendInvites, isPending:isSendingInvites} = useMutation({
+    mutationKey:['sending-invites'],
+    mutationFn:async(payload:InviteMembers) => post(SEND_INVITE, payload),
+    onSuccess:(data)=>{
+      toast.success("Invites sent successfully!")
+      console.log("Invites sent successful!")
+      if(data.success){
+        setCurrentEmail("")
+        setCurrentRole("user")
+        onClose()
+      }
+    },
+    onError:(error)=>{
+      toast.error("Couldn't send invites")
+      console.log("Some error occured while sending invites : ", error.message)
+    }
+  })
+
+  const handleInvitesSend = (values:InviteMembers) => {
+    try {
+      sendInvites(values);
+    } catch (error) {
+      console.log("Some error occured while sending invites: ", error);
+      toast.error("Couldn't send invites");
     }
   }
 
-  const handleRemoveEmail = (emailToRemove: string) => {
-    setEmails(emails.filter((e) => e.email !== emailToRemove))
+  const formik = useFormik<InviteMembers>({
+    initialValues: {
+      workspaceId: workspace_id,
+      team_members: []
+    },
+    validationSchema: InviteMembersSchema,
+    onSubmit: (values) => handleInvitesSend(values)
+  })
+
+  const handleAddMember = () => {
+    if (!emailRegex.test(currentEmail)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    const alreadyExists = formik.values.team_members.some((member) => member.email === currentEmail)
+    if (alreadyExists) {
+      setError("Member already added")
+      return
+    }
+
+    const newMember: Member = {
+      email: currentEmail,
+      privilege: currentRole,
+      status: "pending"
+    }
+
+    formik.setFieldValue("team_members", [...formik.values.team_members, newMember])
+    setCurrentEmail("")
+    setCurrentRole("user")
+    setError("")
   }
 
-  const handleSendInvites = () => {
-    if (emails.length === 0) return
-
-    toast("Invites sent successfully")
-    onAddMembers(emails)
-    onClose()
+  const handleRemoveMember = (email: string) => {
+    const filtered = formik.values.team_members.filter((member) => member.email !== email)
+    formik.setFieldValue("team_members", filtered)
   }
 
   return (
@@ -47,7 +102,7 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
           <DialogTitle className="text-gray-100">Add Team Members</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label className="text-gray-200 text-xs">Email Address</Label>
             <div className="flex gap-2">
@@ -57,9 +112,9 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
                 onChange={(e) => setCurrentEmail(e.target.value)}
                 placeholder="Enter email address"
                 className="bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
-                onKeyPress={(e) => e.key === "Enter" && handleAddEmail()}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMember())}
               />
-              <Select value={currentRole} onValueChange={setCurrentRole}>
+              <Select value={currentRole} onValueChange={(value)=>setCurrentRole(value as "admin"|"user")}>
                 <SelectTrigger className="w-24 cursor-pointer bg-gray-700/50 border-gray-600 text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
@@ -73,13 +128,14 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
                 </SelectContent>
               </Select>
             </div>
+            {error && <p className="text-red-500 text-[0.7rem]">{error}</p>}
           </div>
 
-          {emails.length > 0 && (
+          {formik.values.team_members.length > 0 && (
             <div className="space-y-2">
               <Label className="text-gray-200 text-xs">Added Members</Label>
               <div className="space-y-2 max-h-32 overflow-y-auto">
-                {emails.map((member, index) => (
+                {formik.values.team_members.map((member, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between bg-gray-700/30 p-2 rounded border border-gray-600"
@@ -87,13 +143,13 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-200">{member.email}</span>
                       <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-200">
-                        {member.role}
+                        {member.privilege}
                       </Badge>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRemoveEmail(member.email)}
+                      onClick={() => handleRemoveMember(member.email)}
                       className="text-gray-400 cursor-pointer hover:text-gray-200"
                     >
                       <X className="h-3 w-3" />
@@ -106,6 +162,7 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
 
           <div className="w-full flex gap-2 ml-auto">
             <Button
+              type="button"
               variant="outline"
               onClick={onClose}
               className="border-gray-600 cursor-pointer text-gray-200 hover:bg-gray-700 bg-transparent"
@@ -113,14 +170,19 @@ export function AddMemberModal({ onClose, onAddMembers }: AddMemberModalProps) {
               Cancel
             </Button>
             <Button
-              onClick={handleSendInvites}
-              disabled={emails.length === 0}
-              className="bg-[#4508B3] cursor-pointer flex-1 hover:bg-[#4508B3]/80 text-white"
+              type="submit"
+              disabled={formik.values.team_members.length === 0 || isSendingInvites}
+              className={`flex-1 cursor-pointer text-white transition-colors duration-200 ${
+                formik.values.team_members.length === 0 || isSendingInvites
+                  ? "bg-gray-500 cursor-not-allowed opacity-60"
+                  : "bg-[#4508B3] hover:bg-[#4508B3]/80"
+              }`}
             >
-              Send Invites
+              {isSendingInvites && <span className="loader-2 mr-2" />}
+              {isSendingInvites ? "Inviting..." : "Send Invites"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

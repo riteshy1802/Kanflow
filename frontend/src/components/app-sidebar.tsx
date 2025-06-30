@@ -26,9 +26,10 @@ interface AppSidebarProps {
   onSelectBoard: (boardId: string) => void
   onCreateKanban: () => void
   showCreateForm: boolean
+  setShowCreateForm: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showCreateForm }: AppSidebarProps) {
+export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showCreateForm,setShowCreateForm }: AppSidebarProps) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [myBoards, setMyBoards] = useState<Board[]>([
     { id: "1", name: "Design System Project" },
@@ -124,7 +125,10 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                   className={`w-[90%] max-w-full cursor-pointer justify-start text-[0.7rem] hover:bg-white/10 text-gray-300 hover:text-white ${
                     selectedBoard === board.id ? "bg-white/10 font-semibold text-white" : ""
                   }`}
-                  onClick={() => onSelectBoard(board.id)}
+                  onClick={() => {
+                    onSelectBoard(board.id)
+                    setShowCreateForm(false);
+                  }}
                 >
                   <span className="truncate inline-block max-w-full">{board.name}</span>
                 </Button>
@@ -158,7 +162,10 @@ export function AppSidebar({ selectedBoard, onSelectBoard, onCreateKanban, showC
                   className={`w-[90%] cursor-pointer max-w-full justify-start text-[0.7rem] hover:bg-white/10 text-gray-300 hover:text-white ${
                     selectedBoard === board.id ? "bg-white/10 font-semibold text-white" : ""
                   }`}
-                  onClick={() => onSelectBoard(board.id)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    onSelectBoard(board.id);
+                  }}
                 >
                   <span className="truncate inline-block max-w-full">{board.name}</span>
                 </Button>

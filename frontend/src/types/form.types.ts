@@ -16,6 +16,11 @@ export interface Member{
     status:"pending"|"accepted"|"rejected"
 }
 
+export interface InviteMembers{
+    workspaceId:string | null,
+    team_members:Member[]
+}
+
 export interface createWorkspace{
     name:string,
     description:string

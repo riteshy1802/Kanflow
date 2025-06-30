@@ -21,6 +21,8 @@ class Tasks(models.Model):
     description = models.CharField(max_length=2000)
     due_date = models.DateField()
     due_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Priority(models.TextChoices):
         HIGH = "high"

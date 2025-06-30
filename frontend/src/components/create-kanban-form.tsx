@@ -39,6 +39,10 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
   }
 
   const handleAddMember = () => {
+    if(memberEmail.length===0){
+      setError("Email is required")
+      return;
+    }
     const isPresent = formik.values.team_members.some((member:Member)=>member.email===memberEmail);
     if(isPresent){
       setError("Member already Added");
@@ -60,7 +64,8 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
     mutationFn: (payload:createWorkspace) => post(CREATE_WORKSPACE, payload),
     onSuccess:(data)=>{
       toast.success("WorkSpace created successfully");
-      router.push(`/${data?.payload?.workspaceId}`)
+      router.push(`/?workspace_id=${data?.payload?.workspaceId}`)
+      onClose()
     },
     onError:(error)=>{
       console.log("Some Error in the workspace creation : ", error);
@@ -93,7 +98,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
 
 
   return (
-    <div className="h-full flex items-center justify-center p-6 overflow-y-auto" style={{ backgroundColor: "#1D1D1F" }}>
+    <div className="h-full flex items-center justify-center p-6 overflow-y-auto" style={{ backgroundColor: "#1a1a1a" }}>
       <div className="max-w-2xl w-full mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-100">Create New Kanban Board</h1>
@@ -215,7 +220,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
             )}
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3">
             <Button
               type="button"
               variant="outline"
@@ -229,6 +234,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
               disabled={isCreatingWorkspace || !formik.values.name || !formik.values.description}
               className="bg-[#4B06C2] cursor-pointer flex-1 hover:bg-[#4B06C2]/80 text-white"
             >
+              {isCreatingWorkspace && <span className="loader-2"></span> }
               {isCreatingWorkspace ? "Creating..." : "Create Board"}
             </Button>
           </div>

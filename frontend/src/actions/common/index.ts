@@ -53,7 +53,7 @@ export const refreshAccessToken = async () => {
 
   const data = await post(endpoint, payload);
 
-  const { access_token: newAccessToken } = data;
+  const newAccessToken = data.payload.access_token;
   console.log("New Access token : ", newAccessToken)
 
   if (newAccessToken) {
