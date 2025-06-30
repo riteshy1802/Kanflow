@@ -48,7 +48,7 @@ export const refreshAccessToken = async () => {
   const cookie = new Cookies();
   console.log("Refreshing token");
 
-  const endpoint = "/user/refresh";
+  const endpoint = "/user/refresh/";
   const payload = {};
 
   const data = await post(endpoint, payload);

@@ -14,6 +14,7 @@ class Notifications(models.Model):
     )
     fromUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notification_from_user")
     toUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications_to_user")
+    is_read=models.BooleanField(default=False)
     message = models.CharField(max_length=2000, null=True, blank=True)
     type = models.CharField(
         max_length=10,
@@ -21,6 +22,5 @@ class Notifications(models.Model):
         null=True,
         blank=True
     )
-
     class Meta:
         db_table="notifications"

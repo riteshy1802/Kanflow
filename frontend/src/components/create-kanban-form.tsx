@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,42 +9,88 @@ import { Textarea } from "@/components/ui/textarea"
 import { X, Plus } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner"
+import { useFormik } from "formik"
+import { createWorkspaceSchema } from "@/schemas/createWorkspaceSchema"
+import { createWorkspace, Member } from "@/types/form.types"
+import { useMutation } from "@tanstack/react-query"
+import { post } from "@/actions/common"
+import { CREATE_WORKSPACE } from "@/constants/API_Endpoints"
+import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 interface CreateKanbanFormProps {
   onClose: () => void
 }
 
 export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [searchEmail, setSearchEmail] = useState("")
-  const [selectedRole, setSelectedRole] = useState("user")
-  const [teamMembers, setTeamMembers] = useState<Array<{ email: string; role: string }>>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [memberEmail, setMemberEmail] = useState("");
+  const [privilege, setPrivilege] = useState("user");
+  const router = useRouter();
+  const [error,setError] = useState("");
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const handleAddMember = () => {
-    if (searchEmail && !teamMembers.find((m) => m.email === searchEmail)) {
-      setTeamMembers([...teamMembers, { email: searchEmail, role: selectedRole }])
-      setSearchEmail("")
-      setSelectedRole("user")
+  const handleEmailCheck = (email:string) => {
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }else{
+      setError("")
     }
   }
 
+  const handleAddMember = () => {
+    const isPresent = formik.values.team_members.some((member:Member)=>member.email===memberEmail);
+    if(isPresent){
+      setError("Member already Added");
+      return;
+    }
+    const payload = {
+      email:memberEmail,
+      privilege:privilege,
+      status:"pending"
+    }
+    formik.setFieldValue("team_members", [...formik.values.team_members, payload]);
+    setMemberEmail("");
+    setPrivilege("user");
+    setError("");
+  }
+
+  const {mutate:createNewWorkspace, isPending:isCreatingWorkspace} = useMutation({
+    mutationKey:['creating-workspace'],
+    mutationFn: (payload:createWorkspace) => post(CREATE_WORKSPACE, payload),
+    onSuccess:(data)=>{
+      toast.success("WorkSpace created successfully");
+      router.push(`/${data?.payload?.workspaceId}`)
+    },
+    onError:(error)=>{
+      console.log("Some Error in the workspace creation : ", error);
+    }
+  })
+
+  const handleSubmitWorkspaceCreation = (values:createWorkspace) => {
+    try {
+      console.log("Values:  ", values);
+      createNewWorkspace(values);
+    } catch (error) {
+      console.log("Error occured while creating workspace : ", error);
+    }
+  }
+
+  const formik = useFormik({
+    initialValues:{
+      name:"",
+      description:"",
+      team_members:[]
+    },
+    validationSchema:createWorkspaceSchema,
+    onSubmit:async(values)=>handleSubmitWorkspaceCreation(values)
+  })
+
   const handleRemoveMember = (email: string) => {
-    setTeamMembers(teamMembers.filter((m) => m.email !== email))
+    const filteredTeamMembers = formik.values.team_members.filter((member:Member)=>member.email!=email)
+    formik.setFieldValue("team_members",filteredTeamMembers);
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    setTimeout(() => {
-      toast("Kanban board created successfully")
-      onClose()
-      setIsLoading(false)
-    }, 1000)
-  }
 
   return (
     <div className="h-full flex items-center justify-center p-6 overflow-y-auto" style={{ backgroundColor: "#1D1D1F" }}>
@@ -62,19 +107,22 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={formik.handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-200 text-xs">
               Project Name
             </Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formik.values.name}
+              onChange={formik.handleChange}
               placeholder="Enter project name"
-              required
+              onBlur={formik.handleBlur}
               className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
             />
+            {formik.touched.name && formik.errors.name && (
+                <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -83,26 +131,33 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
             </Label>
             <Textarea
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={formik.values.description}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Describe your project..."
               rows={4}
               className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
             />
+            {formik.touched.description && formik.errors.description && (
+              <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.description}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label className="text-gray-200 text-xs">Team Members</Label>
             <div className="flex items-center justify-center gap-2">
               <Input
-                value={searchEmail}
-                onChange={(e) => setSearchEmail(e.target.value)}
+                value={memberEmail}
+                onChange={(e) => {
+                  setMemberEmail(e.target.value)
+                  handleEmailCheck(e.target.value);
+                }}
                 placeholder="Enter email address"
                 type="email"
                 className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
               />
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="w-32 bg-gray-700/50 border-gray-600 text-gray-100">
+              <Select value={privilege} onValueChange={setPrivilege}>
+                <SelectTrigger className="w-32 bg-gray-700/50 border-gray-600  text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -123,15 +178,17 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
               >
                 <Plus className="h-4 w-4" />
               </Button>
-                
               </div>
             </div>
+            {error.length>0 && (
+              <p className="text-red-500 text-[0.7rem]">{error}</p>
+            )}
 
-            {teamMembers.length > 0 && (
+            {formik.values.team_members.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm text-gray-400">Added members:</p>
                 <div className="space-y-2">
-                  {teamMembers.map((member) => (
+                  {formik.values.team_members.map((member:Member) => (
                     <div
                       key={member.email}
                       className="flex items-center justify-between bg-gray-700/30 p-2 rounded border border-gray-600"
@@ -139,7 +196,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-200">{member.email}</span>
                         <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-200">
-                          {member.role}
+                          {member.privilege}
                         </Badge>
                       </div>
                       <Button
@@ -147,7 +204,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveMember(member.email)}
-                        className="text-gray-400 hover:text-gray-200"
+                        className="text-gray-400 cursor-pointer hover:text-gray-200"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -169,10 +226,10 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !name}
+              disabled={isCreatingWorkspace || !formik.values.name || !formik.values.description}
               className="bg-[#4B06C2] cursor-pointer flex-1 hover:bg-[#4B06C2]/80 text-white"
             >
-              {isLoading ? "Creating..." : "Create Board"}
+              {isCreatingWorkspace ? "Creating..." : "Create Board"}
             </Button>
           </div>
         </form>

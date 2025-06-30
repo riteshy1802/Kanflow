@@ -9,3 +9,15 @@ export interface signUp{
     password:string,
     confirmPassword:string
 }
+
+export interface Member{
+    email:string,
+    privilege:"admin"|"user",
+    status:"pending"|"accepted"|"rejected"
+}
+
+export interface createWorkspace{
+    name:string,
+    description:string
+    team_members?:Member[]
+}

@@ -21,7 +21,7 @@ import toast from "react-hot-toast"
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const router = useRouter()
+  const router = useRouter();
 
   const {mutate:signUpUser, isPending:isSigningUp} = useMutation({
     mutationKey:['signup'],
