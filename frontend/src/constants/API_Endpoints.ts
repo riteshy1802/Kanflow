@@ -1,0 +1,5 @@
+export const USER="user/"
+export const LOGIN=USER+"login/"
+export const SIGNUP=USER+"register/"
+export const ME=USER+"me/"
+export const LOGOUT=USER+"logout/"

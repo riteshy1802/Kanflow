@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -10,52 +9,57 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Kanban, Eye, EyeOff } from "lucide-react"
-import { toast } from "sonner"
+import { useFormik } from "formik"
+import { signUpSchema } from "@/schemas/signUpSchema"
+import { signUp } from "@/types/form.types"
+import { useMutation } from "@tanstack/react-query"
+import { post } from "@/actions/common"
+import { SIGNUP } from "@/constants/API_Endpoints"
+import { cookie } from "@/helper/cookie"
+import toast from "react-hot-toast"
 
 export default function RegisterPage() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    if (password !== confirmPassword) {
-      toast("Password mismatch")
-      setIsLoading(false)
-      return
+  const {mutate:signUpUser, isPending:isSigningUp} = useMutation({
+    mutationKey:['signup'],
+    mutationFn:async(payload:signUp)=>{
+      const {confirmPassword, ...newPayload} = payload;
+      console.log("Confirm Password removed : ", confirmPassword);
+      const response = await post(SIGNUP, newPayload);
+      return response;
+    },
+    onSuccess:(data)=>{
+      cookie.set('access_token',data?.payload?.access_token)
+      toast.success("Registration Successful");
+      router.push('/')
+    },
+    onError:(error)=>{
+      console.log("Some error in register: ", error.message);
+      toast.error(error.message);
     }
+  })
 
-    setTimeout(() => {
-      if (name && email && password) {
-        localStorage.setItem("kanflow_token", "dummy_jwt_token")
-        localStorage.setItem(
-          "kanflow_user",
-          JSON.stringify({
-            id: "1",
-            name: name,
-            email: email,
-            avatar: name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase(),
-          }),
-        )
-        toast("Registration successful")
-        router.push("/")
-      } else {
-        toast("Registration failed")
-      }
-      setIsLoading(false)
-    }, 1000)
+  const handleSignUp = (values:signUp) => {
+    try {
+      signUpUser(values);
+    } catch (error) {
+      console.log("Error in Sign Up: ",error);
+    }
   }
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+      confirmPassword:"",
+      name:""
+    },
+    validationSchema: signUpSchema,
+    onSubmit: async (values) => handleSignUp(values),
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#111112] p-4">
@@ -72,7 +76,7 @@ export default function RegisterPage() {
           <CardDescription className="text-slate-400">Sign up to start managing your projects</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleRegister} className="space-y-4 px-5">
+          <form onSubmit={formik.handleSubmit} className="space-y-4 px-5">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-slate-200">
                 Full Name
@@ -81,11 +85,14 @@ export default function RegisterPage() {
                 id="name"
                 type="text"
                 placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
               />
+              {formik.touched.name && formik.errors.name && (
+                <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-200">
@@ -95,11 +102,14 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
               />
+              {formik.touched.email && formik.errors.email && (
+                <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-200">
@@ -110,21 +120,24 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 pr-10 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-slate-700/30 text-slate-400 hover:text-slate-200"
+                  className="absolute cursor-pointer right-0 top-0 h-full px-3 py-2 hover:bg-slate-700/30 text-slate-400 hover:text-slate-200"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {formik.touched.password && formik.errors.password && (
+                <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.password}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-slate-200">
@@ -135,28 +148,31 @@ export default function RegisterPage() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
+                  value={formik.values.confirmPassword}
+                  onBlur={formik.handleBlur}
+                  onChange={formik.handleChange}
                   className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 pr-10 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-slate-700/30 text-slate-400 hover:text-slate-200"
+                  className="absolute cursor-pointer right-0 top-0 h-full px-3 py-2 hover:bg-slate-700/30 text-slate-400 hover:text-slate-200"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                <p className="text-red-500 text-[0.7rem] mt-1">{formik.errors.confirmPassword}</p>
+              )}
             </div>
             <Button 
               type="submit" 
-              className="w-full mt-3 bg-[#4b06c2] cursor-pointer hover:bg-[#4b06c2]/90 text-white shadow-lg shadow-[#4b06c2]/25 transition-all duration-200" 
-              disabled={isLoading}
+              className="w-full cursor-pointer mt-3 bg-[#4b06c2] cursor-pointer hover:bg-[#4b06c2]/90 text-white shadow-lg shadow-[#4b06c2]/25 transition-all duration-200" 
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {isSigningUp && <span className="loader-2"></span>}
+              {isSigningUp ? "Creating account..." : "Create account"}
             </Button>
           </form>
           <div className="mt-6 text-center">

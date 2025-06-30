@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'api',
 ]
 
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",

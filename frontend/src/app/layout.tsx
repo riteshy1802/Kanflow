@@ -2,7 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Toaster } from "@/components/ui/sonner"
+import { QueryClientTanstack } from "./tanstack-provider/QueryClientTanstack"
+import { Suspense } from "react"
+import { Toaster } from 'react-hot-toast';
+import LoadingScreen from "./LoadingScreen/LoadingScreen"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,8 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <QueryClientTanstack>
+          {children}
+          <Toaster position="top-right"/>
+          <Suspense fallback={<LoadingScreen/>}></Suspense>
+        </QueryClientTanstack>
       </body>
     </html>
   )
