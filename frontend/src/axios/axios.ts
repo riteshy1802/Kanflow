@@ -80,7 +80,7 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (err: any) {
         processQueue(err, null);
-        if (err.response?.status === 403 || err.response?.data?.message === "Refresh token expired") {
+        if (err.response?.status === 403 || err.response?.status === 401 || err.response?.data?.message === "Refresh token expired") {
           logoutUser();
         }
         return Promise.reject(err);

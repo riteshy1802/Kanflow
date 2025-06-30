@@ -12,8 +12,8 @@ class Notifications(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    fromUserId = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notification_from_user")
-    toUserId = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications_to_user")
+    fromUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notification_from_user")
+    toUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications_to_user")
     message = models.CharField(max_length=2000, null=True, blank=True)
     type = models.CharField(
         max_length=10,

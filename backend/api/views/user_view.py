@@ -1,5 +1,5 @@
 import bcrypt
-from rest_framework.decorators import api_view,permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from api.models.user import User
@@ -7,7 +7,6 @@ from api.utils.jwt_utils import generate_token,verify_token
 from api.middlewares.auth_middleware import jwt_authentication
 from django.conf import settings
 import traceback
-from rest_framework.permissions import IsAuthenticated
 from api.serializers.user_serializer import UserSerializer
 
 @api_view(["POST"])
@@ -90,11 +89,11 @@ def logout(request):
 def refresh(request):
     refresh_token = request.COOKIES.get("refresh_token")
     if not refresh_token:
-        return Response({"success":False, "message":"No refresh token found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success":False, "message":"Refresh token expired"}, status=status.HTTP_400_BAD_REQUEST)
     
     user_id = verify_token(refresh_token, token_type="refresh")
     if user_id in [None, "expired"]:
-        return Response({"success":False, "message":"Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"success":False, "message":"Refresh token expired"}, status=status.HTTP_401_UNAUTHORIZED)
     
     tokens = generate_token(user_id)
     payload = {"access_token":tokens['access_token']}
