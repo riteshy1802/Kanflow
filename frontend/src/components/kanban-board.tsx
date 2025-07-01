@@ -14,8 +14,11 @@ import { Input } from "./ui/input"
 import { useQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { post } from "@/actions/common"
-import { GET_WORKSPACE } from "@/constants/API_Endpoints"
+import { GET_ALL_TEAM_MEMBERS, GET_WORKSPACE } from "@/constants/API_Endpoints"
 import { Skeleton } from "./ui/skeleton"
+import { avatarCharacters } from "@/functions/AvatarCharacter"
+import AvatarTeamSkeleton from "./skeletons/AvatarTeamSkeleton"
+import TeamMemberCard from "./team-member-card"
 
 interface Task {
   id: string
@@ -31,12 +34,13 @@ interface Task {
 }
 
 interface Member {
-  id: string
+  member_id: string
+  userId:string | null
   name: string
-  email: string
-  avatar: string
-  role: "admin" | "user"
-  joinedAt: string
+  email: string | null
+  privilege: "admin" | "user",
+  updated_at: string
+  status:"accepted" | "pending" | "rejected"
 }
 
 const COLUMNS = [
@@ -53,6 +57,7 @@ export function KanbanBoard() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
   const params = useParams()
+  const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const workspaceId = params.workspaceId as string
   const [tasks, setTasks] = useState<Task[]>([
     {
@@ -161,16 +166,37 @@ export function KanbanBoard() {
       console.log("Error while fetching workspace data:", error);
     }
   };
+
+  const handleTeamMembersFetch = async() => {
+    try {
+      const payload = {workspaceId}
+      const res = await post(GET_ALL_TEAM_MEMBERS,payload);
+      return res.payload;
+    } catch (error) {
+      console.log("Some error occured while fetching the team members : ", error);
+    }
+  }
+
+  // membersData contains : in_team, invited
+  const {data:membersData, isLoading:loadingMembersData} = useQuery({
+    queryKey:['team_members',workspaceId],
+    queryFn:handleTeamMembersFetch
+  })
+
+  useEffect(()=>{
+    console.log("Members Data : ", membersData);
+  },[membersData])
   
   const { data: workspaceData, isLoading: isFetchingWorkspaceData } = useQuery({
     queryKey: ['workspace-data', workspaceId],
     queryFn: getWorkspaceData,
     enabled: !!workspaceId,
   });
-  
+
   useEffect(()=>{
     setBoardName(workspaceData?.name);
   },[workspaceData]);
+
 
   const handleTaskUpdate = (updatedTask: Task) => {
     setTasks(tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)))
@@ -226,16 +252,17 @@ export function KanbanBoard() {
             </div>
             <div className="flex items-center gap-3">
               {/* Team Avatars */}
+              {loadingMembersData ? <AvatarTeamSkeleton/>:
               <div className="flex -space-x-2">
-                {members.slice(0, 5).map((member) => (
-                  <Tooltip key={member.id}>
+                {membersData?.in_team.slice(0, 5).map((member:Member) => (
+                  <Tooltip key={member.userId}>
                     <TooltipTrigger>
                       <Avatar className="h-8 w-8 border-2 border-gray-800">
                         <AvatarFallback
                           className="text-white text-xs font-medium"
                           style={{ backgroundColor: getColorForName(member?.name) }}
                         >
-                          {member.avatar}
+                          {avatarCharacters(member?.name) || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </TooltipTrigger>
@@ -249,7 +276,7 @@ export function KanbanBoard() {
                     <AvatarFallback className="bg-gray-600 text-xs text-gray-200">+{members.length - 5}</AvatarFallback>
                   </Avatar>
                 )}
-              </div>
+              </div>}
               <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
                 Add Member
               </Button>
@@ -322,72 +349,40 @@ export function KanbanBoard() {
             </div>
           </div>
           ) : (
-            <div className="p-6 overflow-x-hidden h-full">
-              <div className="space-y-4">
-                {members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="grid grid-cols-12 gap-4 items-center p-4 bg-gray-700/30 rounded-lg border border-gray-600"
-                  >
-                    <div className="col-span-1 flex justify-center">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback style={{backgroundColor:getColorForName(member.name)}} className="text-white text-sm font-medium">
-                          {member.avatar}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    <div className="col-span-3">
-                      <p className="font-medium text-sm text-gray-100 truncate" title={member.name}>
-                        {member.name}
-                      </p>
-                    </div>
-
-                    <div className="col-span-3">
-                      <p className="text-sm text-gray-400 truncate" title={member.email}>
-                  {member.email}
-                      </p>
-                    </div>
-
-                    <div className="col-span-2 flex justify-center">
-                      <span
-                        className={`px-5 py-2 text-xs rounded-full capitalize ${
-                        member.role === "admin" 
-                            ? "bg-[#580bdb]/50 text-white" 
-                            : "bg-gray-600 text-white"
+                <div className="p-6 overflow-x-hidden h-full">
+                  <div className="space-y-4 ">
+                    <div className="flex w-full items-center justify-center gap-6">
+                      <button
+                        onClick={() => setActiveTabMembers("in_team")}
+                        className={`pb-2 border-b-2 cursor-pointer text-sm transition-colors ${
+                          activeTabMembers==="in_team"
+                            ? "border-[#580bdb] text-[#580bdb] font-semibold"
+                            : "border-transparent text-gray-400 hover:text-gray-200"
                         }`}
                       >
-                        {member.role}
-                      </span>
+                        In Team
+                      </button>
+                      <button
+                        onClick={() => setActiveTabMembers("invited")}
+                        className={`pb-2 border-b-2 cursor-pointer text-sm transition-colors ${
+                          activeTabMembers==="invited"
+                            ? "border-[#580bdb] text-[#580bdb] font-semibold"
+                            : "border-transparent text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        Invited
+                      </button>
                     </div>
-
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500">
-                        Joined {member.joinedAt}
-                      </p>
-                    </div>
-
-                    <div className="col-span-1 flex justify-center">
-                      <div className="relative group">
-                  <Button
-                    variant="ghost"
-                    // onClick={() => handleRemoveMember(member.id)}
-                    className="p-2 cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-full transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    Remove {member.name}
+                    {activeTabMembers==="in_team" && membersData?.in_team?.map((member:Member) => (
+                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers}/>
+                    ))}
+                    {activeTabMembers==="invited" && membersData?.invited?.map((member:Member) => (
+                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers}/>
+                    ))}
                   </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
         {selectedTask && (
           <TaskDetail

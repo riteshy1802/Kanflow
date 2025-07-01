@@ -4,7 +4,7 @@ interface activeProjectState{
     projectId:string | null
 }
 
-const savedProject = localStorage.getItem("current_project");
+const savedProject = localStorage.getItem("current_project")|| null;
 const defaultState: activeProjectState = {
   projectId: savedProject ? JSON.parse(savedProject) : "",
 };

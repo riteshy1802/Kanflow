@@ -15,7 +15,7 @@ import toast from "react-hot-toast"
 import { post } from "@/actions/common"
 import { SEND_INVITE } from "@/constants/API_Endpoints"
 import { useMutation } from "@tanstack/react-query"
-import { useSearchParams } from "next/navigation"
+import { useParams } from "next/navigation"
 
 interface AddMemberModalProps {
   onClose: () => void
@@ -25,8 +25,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
   const [currentEmail, setCurrentEmail] = useState("")
   const [currentRole, setCurrentRole] = useState<"admin" | "user">("user")
   const [error, setError] = useState("")
-  const searchParams = useSearchParams();
-  const workspace_id = searchParams.get('workspace_id');
+  const {workspaceId} = useParams()
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -59,7 +58,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
 
   const formik = useFormik<InviteMembers>({
     initialValues: {
-      workspaceId: workspace_id,
+      workspaceId: workspaceId,
       team_members: []
     },
     validationSchema: InviteMembersSchema,
