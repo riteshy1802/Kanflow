@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { getColorForName } from "@/functions/getAvatarColor"
 import { useQuery } from "@tanstack/react-query"
 import { get, post } from "@/actions/common"
-import { GET_ALL_WORKSPACES, LOGOUT, ME } from "@/constants/API_Endpoints"
+import { GET_ALL_NOTIFICATIONS, GET_ALL_WORKSPACES, LOGOUT, ME } from "@/constants/API_Endpoints"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
 import { cookie } from "@/helper/cookie"
 import SpinnerTailwind from "@/app/LoadingScreen/SpinnerTailwind"
@@ -18,6 +18,7 @@ import SidebarProjectsSkeleton from "./skeletons/SidebarProjectsSkeleton"
 import NoProjects from "./NothingFound/NoProjects"
 import { useDispatch } from "react-redux"
 import { updateProjectId } from "@/redux/Slices/activeProjectSlice"
+import { Notification } from "@/types/form.types"
 // import { RootState } from "@/redux/store"
 
 interface Board {
@@ -28,6 +29,7 @@ export function AppSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [myBoardsOpen, setMyBoardsOpen] = useState(true)
   const [sharedBoardsOpen, setSharedBoardsOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const pathName = usePathname();
   const currentRoute = pathName.split('/').pop();
   const router = useRouter();
@@ -36,7 +38,19 @@ export function AppSidebar() {
 
   console.log("Workspace id : ", workspaceId);
 
-  // const currentProject = useSelector((state:RootState)=>state.currentProject.projectId);
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notificationsData'],
+    queryFn: async () => {
+      const res = await get(GET_ALL_NOTIFICATIONS)
+      return res.payload.notifications
+    }
+  })
+
+  useEffect(()=>{
+    const unreadMessages = notificationsData?.filter((notif:Notification)=>notif.is_read===false);
+    const count = unreadMessages?.length;
+    setUnreadNotifications(count);
+  },[notificationsData]);
 
   const projectClick = (workspaceId:string) => {
     dispatch(updateProjectId(workspaceId));
@@ -123,6 +137,7 @@ export function AppSidebar() {
           <>
             <SidebarProjectsSkeleton count={3}/>
             <SidebarProjectsSkeleton count={2}/>
+            <SidebarProjectsSkeleton count={0}/>
           </>
           :
           <>
@@ -194,21 +209,21 @@ export function AppSidebar() {
                   {projects?.shared_workspaces?.length===0 && <NoProjects message="No shared projects"/>}
                 </CollapsibleContent>
               </Collapsible>
+              <Button
+                variant="ghost"
+                onClick={()=>{redirect('/notifications')}}
+                className="w-full flex px-3 text-[0.8rem] cursor-pointer justify-between items-center hover:bg-white/10 text-gray-200 hover:text-white"
+              >
+                <div className="block text-xs flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Notifications
+                </div>
+                <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.6rem] font-medium">
+                  {unreadNotifications}
+                </div>
+              </Button>
             </>
-        }
-        <Button
-          variant="ghost"
-          onClick={()=>{redirect('/notifications')}}
-          className="w-full flex px-3 text-[0.8rem] cursor-pointer justify-between items-center hover:bg-white/10 text-gray-200 hover:text-white"
-        >
-          <div className="block text-xs flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notifications
-          </div>
-          <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.6rem] font-medium">
-            1
-          </div>
-        </Button>
+          }
       </div>
 
       {/* User Profile */}

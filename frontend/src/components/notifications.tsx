@@ -1,76 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, Check, X, Users, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "./ui/button"
-
-interface Notification {
-  id: string
-  type: "workspace_invite"
-  workspaceName: string
-  inviterName: string
-  inviterEmail: string
-  description: string
-  timestamp: string
-  isRead: boolean
-  status?: "pending" | "accepted" | "rejected"
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "workspace_invite",
-    workspaceName: "Design Team Pro",
-    inviterName: "Sarah Johnson",
-    inviterEmail: "sarah@designteam.com",
-    description:
-      "You've been invited to join the Design Team Pro workspace. This workspace contains ongoing design projects, client assets, and collaborative tools for our design team.",
-    timestamp: "2 hours ago",
-    isRead: false,
-    status: "pending",
-  },
-  {
-    id: "2",
-    type: "workspace_invite",
-    workspaceName: "Marketing Hub",
-    inviterName: "Mike Chen",
-    inviterEmail: "mike@marketinghub.com",
-    description:
-      "Join our Marketing Hub workspace to collaborate on marketing campaigns, access brand assets, and coordinate with the marketing team.",
-    timestamp: "1 day ago",
-    isRead: false,
-    status: "pending",
-  },
-  {
-    id: "3",
-    type: "workspace_invite",
-    workspaceName: "Development Core",
-    inviterName: "Emily Davis",
-    inviterEmail: "emily@devcore.com",
-    description:
-      "You're invited to the Development Core workspace where our engineering team collaborates on code reviews, project planning, and technical documentation.",
-    timestamp: "3 days ago",
-    isRead: true,
-    status: "accepted",
-  },
-]
+import { useQuery } from "@tanstack/react-query"
+import { get } from "@/actions/common"
+import { GET_ALL_NOTIFICATIONS } from "@/constants/API_Endpoints"
+import NotificationsSkelelton from "./skeletons/NotificationsSkelelton"
+import { Notification } from "@/types/form.types"
 
 const Notifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+  const { data: notificationsData, isLoading: fetchingNotifications } = useQuery({
+    queryKey: ['notificationsData'],
+    queryFn: async () => {
+      const res = await get(GET_ALL_NOTIFICATIONS)
+      return res.payload.notifications
+    }
+  })
+
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (notificationsData && notificationsData.length > 0) {
+      setNotifications([...notificationsData])
+    }
+  }, [notificationsData])
+
+  useEffect(() => {
+    console.log("Notifications : ", notificationsData);
+  }, [notificationsData])
+
   const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)))
+    setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n)))
   }
 
   const handleAccept = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: "accepted", isRead: true } : n)))
+    setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, reaction: "accepted", is_read: true } : n)))
     console.log(`Accepted invitation ${id}`)
   }
 
   const handleReject = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: "rejected", isRead: true } : n)))
+    setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, reaction: "rejected", is_read: true } : n)))
     console.log(`Rejected invitation ${id}`)
   }
 
@@ -78,7 +50,7 @@ const Notifications = () => {
     setExpandedCard(expandedCard === id ? null : id)
   }
 
-  const getStatusIcon = (status?: string) => {
+  const getStatusIcon = (status?: string | undefined) => {
     if (status === "accepted") {
       return <Check className="w-3 h-3 text-green-500" />
     }
@@ -96,23 +68,23 @@ const Notifications = () => {
           <h2 className="text-lg font-semibold">Notifications</h2>
         </div>
         
-        <div className="space-y-2">
+        {fetchingNotifications ? <NotificationsSkelelton/> : <div className="space-y-2">
           <AnimatePresence>
             {notifications.map((notification) => (
               <motion.div
-                key={notification.id}
-                onClick={()=>{
-                    setExpandedCard(notification.id)
-                    if (!notification.isRead) {
-                        markAsRead(notification.id)
-                    }
+                key={notification.notification_id}
+                onClick={() => {
+                  setExpandedCard(notification.notification_id)
+                  if (!notification.is_read) {
+                    markAsRead(notification.notification_id)
+                  }
                 }}
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className={`border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-200 hover:border-gray-600 ${
-                  !notification.isRead ? "bg-[#2d2a3a]/80 border-[#580BDB]/20" : "bg-[#252525]"
+                className={`border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-200 hover:border-gray-600 cursor-pointer ${
+                  !notification.is_read ? "bg-[#2d2a3a]/80 border-[#580BDB]/20" : "bg-[#252525]"
                 }`}
               >
                 <div className="p-3">
@@ -124,31 +96,31 @@ const Notifications = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`text-sm truncate ${!notification.isRead ? "font-semibold text-white" : "font-medium text-gray-200"}`}>
-                            Invite to join {notification.workspaceName}
+                          <h3 className={`text-sm truncate ${!notification.is_read ? "font-semibold text-white" : "font-medium text-gray-200"}`}>
+                            Invite to join {notification.workspace_name}
                           </h3>
-                          {getStatusIcon(notification.status)}
-                          {!notification.isRead && notification.status === "pending" && (
+                          {getStatusIcon(notification?.reaction)}
+                          {!notification.is_read && notification?.reaction === "pending" && (
                             <div className="w-1.5 h-1.5 bg-[#580BDB] rounded-full flex-shrink-0"></div>
                           )}
                         </div>
                         
                         <div className="flex items-center gap-1 justify-start">
                           <p className="text-xs text-gray-400 truncate">
-                            From {notification.inviterName}{" -"}
+                            From {notification.name}{" -"}
                           </p>
-                          <span className="text-xs text-gray-500 flex-shrink-0">{notification.timestamp}</span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">{new Date(notification.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-2 ml-3">
-                      {notification.status === "pending" && (
+                      {notification.reaction === "pending" && (
                         <div className="flex items-center gap-1">
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleReject(notification.id)
+                              handleReject(notification.notification_id)
                             }}
                             size="sm"
                             className="bg-gray-600 cursor-pointer hover:bg-gray-700 text-white px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
@@ -159,7 +131,7 @@ const Notifications = () => {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleAccept(notification.id)
+                              handleAccept(notification.notification_id)
                             }}
                             size="sm"
                             className="bg-[#580BDB] cursor-pointer hover:bg-[#4D10B5] text-white px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
@@ -170,26 +142,26 @@ const Notifications = () => {
                         </div>
                       )}
                       
-                      {notification.status === "accepted" && (
+                      {notification.reaction === "accepted" && (
                         <div className="text-xs text-green-500 font-medium px-2">Accepted</div>
                       )}
                       
-                      {notification.status === "rejected" && (
+                      {notification.reaction === "rejected" && (
                         <div className="text-xs text-red-500 font-medium px-2">Rejected</div>
                       )}
                       
                       <Button
                         onClick={(e) => {
                           e.stopPropagation()
-                          toggleExpand(notification.id)
-                          if (!notification.isRead) {
-                            markAsRead(notification.id)
+                          toggleExpand(notification.notification_id)
+                          if (!notification.is_read) {
+                            markAsRead(notification.notification_id)
                           }
                         }}
                         size={"icon"}
                         className="p-1 cursor-pointer hover:bg-gray-700/50 rounded transition-colors flex-shrink-0"
                       >
-                        {expandedCard === notification.id ? (
+                        {expandedCard === notification.notification_id ? (
                           <ChevronUp className="w-4 h-4 text-gray-400" />
                         ) : (
                           <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -199,7 +171,7 @@ const Notifications = () => {
                   </div>
                   
                   <AnimatePresence>
-                    {expandedCard === notification.id && (
+                    {expandedCard === notification.notification_id && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -209,10 +181,10 @@ const Notifications = () => {
                       >
                         <div className="pt-3 pl-11">
                           <p className="text-xs text-gray-300 leading-relaxed mb-2">
-                            {notification.description}
+                            {notification.message_content}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Invited by: {notification.inviterEmail}
+                            Invited by: {notification.senderEmail}
                           </p>
                         </div>
                       </motion.div>
@@ -223,14 +195,14 @@ const Notifications = () => {
             ))}
           </AnimatePresence>
           
-          {notifications.length === 0 && (
+          {notifications.length === 0 && !fetchingNotifications && (
             <div className="text-center py-16">
               <Bell className="w-8 h-8 text-gray-600 mx-auto mb-3" />
               <h3 className="text-base font-medium text-gray-400 mb-1">No notifications</h3>
-              <p className="text-sm text-gray-500">You're all caught up!</p>
+              <p className="text-sm text-gray-500">You&apos;re all caught up!</p>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

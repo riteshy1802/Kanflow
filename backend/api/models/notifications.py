@@ -11,6 +11,7 @@ class Type(models.TextChoices):
 class Reaction(models.TextChoices):
     ACCEPTED="accepted"
     REJECTED="rejected"
+    PENDING="pending"
 
 class Notifications(models.Model):
     notification_id = models.UUIDField(
@@ -22,7 +23,7 @@ class Notifications(models.Model):
         choices=Reaction.choices,
         null=True,
         blank=True,
-        default=None
+        default='pending'
     )
     workspaceId=models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="notification_workspace", null=True)
     fromUser = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notification_from_user")

@@ -28,3 +28,17 @@ export interface createWorkspace{
     team_members?:Member[],
     message?:string
 }
+
+export interface Notification {
+  notification_id: string
+  fromUser: string
+  toUser: string
+  workspaceId: string
+  workspace_name: string
+  is_read: boolean
+  name: string
+  message_content: string
+  reaction: "pending" | "accepted" | "rejected"
+  created_at: string
+  senderEmail: string
+}

@@ -5,6 +5,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     message_content = serializers.SerializerMethodField()
     workspace_name = serializers.SerializerMethodField()
+    senderEmail = serializers.SerializerMethodField()
     
     class Meta:
         model = Notifications
@@ -19,6 +20,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             'message_content',
             'reaction',
             'created_at',
+            'senderEmail',
         ]
     
     def get_name(self, obj):
@@ -29,3 +31,6 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     def get_workspace_name(self, obj):
         return obj.workspaceId.name if obj.workspaceId else None
+
+    def get_senderEmail(self, obj):
+        return obj.fromUser.email if obj.fromUser else None
