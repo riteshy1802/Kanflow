@@ -8,7 +8,7 @@ import { FilterDropdown } from "@/components/filter-dropdown"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Download, Pen, X } from "lucide-react"
+import { Download, Pen, Plus, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -419,12 +419,22 @@ export function KanbanBoard() {
                         Invited
                       </button>
                     </div>
-                    {activeTabMembers==="in_team" && membersData?.in_team?.map((member:Member) => (
-                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers}/>
+                    {activeTabMembers === "in_team" && membersData?.in_team?.map((member: Member) => (
+                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers} />
                     ))}
-                    {activeTabMembers==="invited" && membersData?.invited?.map((member:Member) => (
-                      <TeamMemberCard key={member.userId || member.member_id} member={member} tab={activeTabMembers}/>
+
+                    {activeTabMembers === "invited" && membersData?.invited?.length > 0 && membersData.invited.map((member: Member) => (
+                      <TeamMemberCard key={member.userId || member.member_id} member={member} tab={activeTabMembers} />
                     ))}
+
+                    {activeTabMembers === "invited" && (!membersData?.invited || membersData.invited.length === 0) && (
+                      <div className="flex flex-col items-center mt-5 justify-center">
+                        <p className="text-sm text-gray-400">No Invites yet!</p>
+                        <Button onClick={() => setShowAddMember(true)} size={"sm"} className="bg-[#580bdb] px-5 mt-2 hover:bg-[#580bdb]/80 cursor-pointer text-sm text-white">
+                          Invite
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

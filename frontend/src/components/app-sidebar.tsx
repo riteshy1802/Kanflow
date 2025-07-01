@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { getColorForName } from "@/functions/getAvatarColor"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { get, post } from "@/actions/common"
 import { GET_ALL_NOTIFICATIONS, GET_ALL_WORKSPACES, LOGOUT, ME } from "@/constants/API_Endpoints"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
@@ -34,11 +34,12 @@ export function AppSidebar() {
   const router = useRouter();
   const dispatch = useDispatch();
   const {workspaceId} = useParams();
+  const queryClient = useQueryClient();
 
   console.log("Workspace id : ", workspaceId);
 
   const { data: notificationsData } = useQuery({
-    queryKey: ['notificationsData'],
+    queryKey: ['notificationsData-onAppSidebar'],
     queryFn: async () => {
       const res = await get(GET_ALL_NOTIFICATIONS)
       return res.payload.notifications
@@ -48,7 +49,7 @@ export function AppSidebar() {
   useEffect(()=>{
     const unreadMessages = notificationsData?.filter((notif:Notification)=>notif.is_read===false);
     const count = unreadMessages?.length;
-    setUnreadNotifications(count);
+    setUnreadNotifications(count??0);
   },[notificationsData]);
 
   const projectClick = (workspaceId:string) => {
@@ -97,6 +98,7 @@ export function AppSidebar() {
       if(res.success===true){
         cookie.delete("access_token");
         router.push('/login');
+        queryClient.clear();
       }
     } catch (error) {
       console.log("Some error occured : ",error);
