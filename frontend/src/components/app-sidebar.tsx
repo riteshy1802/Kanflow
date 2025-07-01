@@ -19,7 +19,6 @@ import NoProjects from "./NothingFound/NoProjects"
 import { useDispatch } from "react-redux"
 import { updateProjectId } from "@/redux/Slices/activeProjectSlice"
 import { Notification } from "@/types/form.types"
-// import { RootState } from "@/redux/store"
 
 interface Board {
   workspaceId: string
@@ -218,9 +217,11 @@ export function AppSidebar() {
                   <Bell className="h-4 w-4" />
                   Notifications
                 </div>
-                <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.6rem] font-medium">
-                  {unreadNotifications}
-                </div>
+                {unreadNotifications!==0 && 
+                  <div className="flex items-center justify-center w-4 h-4 bg-[#4B06C2] rounded-full text-white text-[0.6rem] font-medium">
+                    {unreadNotifications}
+                  </div>
+                }
               </Button>
             </>
           }

@@ -68,7 +68,7 @@ def create_workspace(request):
                     fromUser=creator,
                     workspaceId=workspace,
                     toUser=user if user else None,
-                    to_email=None if user else email,
+                    to_email=email,
                     type="request",
                     messageId=msg_obj
                 )
@@ -148,7 +148,7 @@ def invite_team_members(request):
                 fromUser=request.user,
                 workspaceId=workspace,
                 toUser=user if user else None,
-                to_email=email if not user else None,
+                to_email=email,
                 type="request",
                 messageId=msg_obj
             )
@@ -185,3 +185,21 @@ def get_all_workspaces(request):
     except Exception as e:
         print("Error while getting workspaces data for app sidebar:", str(e))
         return Response({"success":False, "message":"Failed to fetch all workspaces", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+@jwt_authentication
+def update_workspace_name(request):
+    try:
+        data = request.data
+        workspaceId = data.get('workspaceId')
+        newName = data.get('workspaceNewName')
+        workspace = Workspace.objects.filter(workspaceId=workspaceId).first()
+        if not workspace:
+            # keeping the message empty to not to show on the frontend, toast will be shown for this..
+            return Response({"success":False,"message":""}, status=drf_status.HTTP_404_NOT_FOUND)
+        workspace.name=newName
+        workspace.save()
+        return Response({"success":True, "message":"Workspace name updated!"}, status=drf_status.HTTP_200_OK)
+    except Exception as e:
+        print("Error occured while updating the workspace name : ",e)
+        return Response({"success":False, "message":"Couldn't update the name!"}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)

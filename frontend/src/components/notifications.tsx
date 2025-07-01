@@ -4,11 +4,21 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, Check, X, Users, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "./ui/button"
-import { useQuery } from "@tanstack/react-query"
-import { get } from "@/actions/common"
-import { GET_ALL_NOTIFICATIONS } from "@/constants/API_Endpoints"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { get, post } from "@/actions/common"
+import { ACCEPT_REJECT_WORKSPACE_INVITE, GET_ALL_NOTIFICATIONS, MARK_READ_NOTIFICATION } from "@/constants/API_Endpoints"
 import NotificationsSkelelton from "./skeletons/NotificationsSkelelton"
 import { Notification } from "@/types/form.types"
+
+interface MarkReadPayload{
+  notification_id:string
+}
+
+interface AcceptRejectPayload{
+  reaction:"accepted" | "rejected"
+  workspaceId:string
+  notification_id:string
+}
 
 const Notifications = () => {
   const { data: notificationsData, isLoading: fetchingNotifications } = useQuery({
@@ -32,18 +42,62 @@ const Notifications = () => {
     console.log("Notifications : ", notificationsData);
   }, [notificationsData])
 
+  const {mutate:markReadNotification} = useMutation({
+    mutationKey:['markAsRead'],
+    mutationFn:async(payload:MarkReadPayload)=>{
+      const res = await post(MARK_READ_NOTIFICATION, payload);
+      return res;
+    },
+    onSuccess:()=>{
+      console.log("Marked true!");
+    },
+    onError:()=>{
+      console.log("Failed to mark the read!");
+    }
+  })
+
+  const {mutate:acceptRejectWorkspaceInvite} = useMutation({
+    mutationKey:['acceptRejectWorkspaceInvite'],
+    mutationFn:async(payload:AcceptRejectPayload)=>{
+      const res = await post(ACCEPT_REJECT_WORKSPACE_INVITE, payload);
+      return res;
+    },
+    onSuccess:()=>{
+      console.log("Reaction updated!")
+    },
+    onError:()=>{
+      console.log("Some error in the update!")
+    }
+  })
+
   const markAsRead = (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n)))
+    markReadNotification({notification_id:id});
   }
 
-  const handleAccept = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, reaction: "accepted", is_read: true } : n)))
-    console.log(`Accepted invitation ${id}`)
+  const handleAccept = (notification_id: string, workspaceId:string) => {
+    setNotifications((prev) => prev.map((n) => (n.notification_id === notification_id ? { ...n, reaction: "accepted", is_read: true } : n)))
+    console.log(`Accepted invitation ${notification_id}`)
+    // if accept marked assuming read
+    markReadNotification({notification_id:notification_id});
+    const payload:AcceptRejectPayload = {
+      reaction:"accepted",
+      notification_id:notification_id,
+      workspaceId:workspaceId
+    }
+    acceptRejectWorkspaceInvite(payload);
   }
 
-  const handleReject = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, reaction: "rejected", is_read: true } : n)))
-    console.log(`Rejected invitation ${id}`)
+  const handleReject = (notification_id: string, workspaceId:string) => {
+    setNotifications((prev) => prev.map((n) => (n.notification_id === notification_id ? { ...n, reaction: "rejected", is_read: true } : n)))
+    console.log(`Rejected invitation ${notification_id}`)
+    markReadNotification({notification_id:notification_id});
+    const payload:AcceptRejectPayload = {
+      reaction:"rejected",
+      notification_id:notification_id,
+      workspaceId:workspaceId
+    }
+    acceptRejectWorkspaceInvite(payload);
   }
 
   const toggleExpand = (id: string) => {
@@ -120,7 +174,7 @@ const Notifications = () => {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleReject(notification.notification_id)
+                              handleReject(notification.notification_id, notification.workspaceId)
                             }}
                             size="sm"
                             className="bg-gray-600 cursor-pointer hover:bg-gray-700 text-white px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
@@ -131,7 +185,7 @@ const Notifications = () => {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleAccept(notification.notification_id)
+                              handleAccept(notification.notification_id, notification.workspaceId)
                             }}
                             size="sm"
                             className="bg-[#580BDB] cursor-pointer hover:bg-[#4D10B5] text-white px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"

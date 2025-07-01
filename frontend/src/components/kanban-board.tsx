@@ -11,14 +11,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Download, Pen, Trash2, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { post } from "@/actions/common"
-import { GET_ALL_TEAM_MEMBERS, GET_WORKSPACE } from "@/constants/API_Endpoints"
+import { GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME } from "@/constants/API_Endpoints"
 import { Skeleton } from "./ui/skeleton"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
 import AvatarTeamSkeleton from "./skeletons/AvatarTeamSkeleton"
 import TeamMemberCard from "./team-member-card"
+import toast from "react-hot-toast"
 
 interface Task {
   id: string
@@ -31,6 +32,11 @@ interface Task {
   createdAt: string
   updatedAt: string
   createdBy: string
+}
+
+interface UpdateBoardNameType{
+  workspaceNewName:string,
+  workspaceId:string
 }
 
 interface Member {
@@ -154,10 +160,6 @@ export function KanbanBoard() {
     sortBy: "lastUpdated",
   })
 
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
-
-  const [boardName, setBoardName] = useState("")
-
   const getWorkspaceData = async () => {
     try {
       const res = await post(GET_WORKSPACE, { workspaceId });
@@ -166,6 +168,17 @@ export function KanbanBoard() {
       console.log("Error while fetching workspace data:", error);
     }
   };
+
+  const { data: workspaceData, isLoading: isFetchingWorkspaceData } = useQuery({
+    queryKey: ['workspace-data', workspaceId],
+    queryFn: getWorkspaceData,
+    enabled: !!workspaceId,
+  });
+
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const workspaceNameTrack = workspaceData?.name
+
+  const [boardName, setBoardName] = useState(workspaceData?.name || "")
 
   const handleTeamMembersFetch = async() => {
     try {
@@ -187,16 +200,37 @@ export function KanbanBoard() {
   useEffect(()=>{
     console.log("Members Data : ", membersData);
   },[membersData])
-  
-  const { data: workspaceData, isLoading: isFetchingWorkspaceData } = useQuery({
-    queryKey: ['workspace-data', workspaceId],
-    queryFn: getWorkspaceData,
-    enabled: !!workspaceId,
-  });
 
   useEffect(()=>{
     setBoardName(workspaceData?.name);
   },[workspaceData]);
+
+  const{mutate:updateProjectName, isPending:updatingProjectName} = useMutation({
+    mutationKey:['update-project-name'],
+    mutationFn:async(payload:UpdateBoardNameType)=>{
+      const res = await post(UPDATE_WORKSPACE_NAME,payload)
+      return res;
+    },
+    onSuccess:()=>{
+      toast.success("Update successful!")
+      setIsEditingName(false);
+    },onError:()=>{
+      toast.success("Couldn't update name!")
+      setBoardName(workspaceNameTrack);
+    }
+  })
+
+  const handleUpdateBoardName = async() => {
+    try {
+      const payload = {
+        workspaceNewName:boardName,
+        workspaceId:workspaceId
+      }
+      updateProjectName(payload);
+    } catch (error) {
+      console.log("Some error occured while updating the project name : ", error);
+    }
+  }
 
 
   const handleTaskUpdate = (updatedTask: Task) => {
@@ -229,20 +263,31 @@ export function KanbanBoard() {
                     id="board-name"
                     placeholder="Enter board name"
                     value={boardName}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUpdateBoardName();
+                      }
+                    }}
                     onChange={(e) => setBoardName(e.target.value)}
                     className="border-slate-600/50 min-w-88 text-2xl font-bold text-gray-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
                   />
-                  <X
+                  {updatingProjectName?
+                    <svg aria-hidden="true" className="w-5 h-5 ml-2 text-gray-100 animate-spin dark:text-gray-600 fill-[#580BDB]" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                    </svg>
+                    :
+                    <X
                     onClick={() => setIsEditingName(false)}
                     className="inline-block ml-2 h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-200"
-                  />
+                  />}
                 </div>
               ) : (
                 isFetchingWorkspaceData ? 
                   <Skeleton className="h-8 w-72 rounded-md bg-gray-600/50"/>
                 :
                   <div className="w-full flex gap-2 items-center">
-                    <h1 className="text-2xl font-bold text-gray-100">{workspaceData?.name}</h1>
+                    <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
                     <Pen
                       onClick={() => setIsEditingName(true)}
                       className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
