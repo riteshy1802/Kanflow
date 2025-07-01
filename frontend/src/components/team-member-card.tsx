@@ -58,7 +58,7 @@ const TeamMemberCard = ({member, tab}:{member:Member, tab:string}) => {
             <p className="text-xs text-gray-500">
                 {tab==="in_team" ? "Joined" : "Invited on"} - {new Date(member.updated_at).toLocaleDateString()}
             </p>
-            {member.status!=="accepted" && <p className={`text-xs px-2 py-1 mt-2 ${member.status==="pending" ? "text-amber-500 rounded-md border border-amber-500 bg-amber-500/20" : "text-red border border-red bg-red-500/20"}`}>{member.status}</p>}
+            {member.status!=="accepted" && <p className={`text-xs px-2 py-1 mt-2 ${member.status==="pending" ? "text-amber-500 rounded-md border border-amber-500 bg-amber-500/20" : "text-red-500 rounded-md border border-red-500 bg-red-500/20"}`}>{member.status}</p>}
         </div>
 
         <div className="col-span-1 flex justify-center">

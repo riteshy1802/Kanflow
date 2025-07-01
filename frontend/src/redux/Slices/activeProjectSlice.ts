@@ -4,9 +4,9 @@ interface activeProjectState{
     projectId:string | null
 }
 
-const savedProject = localStorage.getItem("current_project")|| null;
+// const savedProject = localStorage.getItem("current_project")|| null;
 const defaultState: activeProjectState = {
-  projectId: savedProject ? JSON.parse(savedProject) : "",
+  projectId: "",
 };
 
 const activeProjectSlice = createSlice({
@@ -14,11 +14,11 @@ const activeProjectSlice = createSlice({
     initialState:defaultState,
     reducers:{
         updateProjectId: (state, action: PayloadAction<string>) => {
-            localStorage.setItem("current_project",JSON.stringify(action.payload));
+            // localStorage.setItem("current_project",JSON.stringify(action.payload));
             state.projectId = action.payload;
         },
         clearProjectId: (state) => {
-            localStorage.setItem("current_project",JSON.stringify(""));
+            // localStorage.setItem("current_project",JSON.stringify(""));
             state.projectId=""
         }
     }

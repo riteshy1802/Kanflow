@@ -180,7 +180,8 @@ export function KanbanBoard() {
   // membersData contains : in_team, invited
   const {data:membersData, isLoading:loadingMembersData} = useQuery({
     queryKey:['team_members',workspaceId],
-    queryFn:handleTeamMembersFetch
+    queryFn:handleTeamMembersFetch,
+    enabled:!!workspaceId
   })
 
   useEffect(()=>{
@@ -377,7 +378,7 @@ export function KanbanBoard() {
                       <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers}/>
                     ))}
                     {activeTabMembers==="invited" && membersData?.invited?.map((member:Member) => (
-                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers}/>
+                      <TeamMemberCard key={member.userId || member.member_id} member={member} tab={activeTabMembers}/>
                     ))}
                   </div>
                 </div>
