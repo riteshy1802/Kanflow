@@ -13,7 +13,7 @@ class TeamMembers(models.Model):
         PENDING = "pending"
         REJECTED = "rejected"
 
-    member_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    member_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)#invite id like.. not using it for now.. can be used in future!
     userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="team_members")
     email = models.EmailField(null=True)
     workspaceId = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="member_of_workspace")

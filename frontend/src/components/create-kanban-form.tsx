@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { useFormik } from "formik"
 import { createWorkspaceSchema } from "@/schemas/createWorkspaceSchema"
 import { createWorkspace, Member } from "@/types/form.types"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { post } from "@/actions/common"
 import { CREATE_WORKSPACE } from "@/constants/API_Endpoints"
 import toast from "react-hot-toast"
@@ -28,6 +28,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
   const router = useRouter();
   const [error,setError] = useState("");
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const queryClient = useQueryClient();
 
   const handleEmailCheck = (email:string) => {
     if (!emailRegex.test(email)) {
@@ -64,7 +65,8 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
     mutationFn: (payload:createWorkspace) => post(CREATE_WORKSPACE, payload),
     onSuccess:(data)=>{
       toast.success("WorkSpace created successfully");
-      router.push(`/?workspace_id=${data?.payload?.workspaceId}`)
+      router.push(`/workspace/${data?.payload?.workspaceId}`)
+      queryClient.invalidateQueries({queryKey : ['all-workspaces']})
       onClose()
     },
     onError:(error)=>{
@@ -98,18 +100,10 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
 
 
   return (
-    <div className="h-full flex items-center justify-center p-6 overflow-y-auto" style={{ backgroundColor: "#1a1a1a" }}>
+    <div className="h-full w-full flex items-center justify-center p-6 overflow-y-auto" style={{ backgroundColor: "#1a1a1a" }}>
       <div className="max-w-2xl w-full mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-100">Create New Kanban Board</h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-gray-400 cursor-pointer flex items-center justify-center hover:text-gray-200 hover:bg-gray-700"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
         <form onSubmit={formik.handleSubmit} className="space-y-6">
@@ -162,7 +156,7 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
                 className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
               />
               <Select value={privilege} onValueChange={setPrivilege}>
-                <SelectTrigger className="w-32 bg-gray-700/50 border-gray-600  text-gray-100">
+                <SelectTrigger className="w-32 cursor-pointer bg-gray-700/50 border-gray-600  text-gray-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -221,14 +215,14 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
           </div>
 
           <div className="flex gap-3">
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               onClick={onClose}
               className="border-gray-600 cursor-pointer text-gray-200 hover:bg-gray-700 bg-transparent"
             >
               Cancel
-            </Button>
+            </Button> */}
             <Button
               type="submit"
               disabled={isCreatingWorkspace || !formik.values.name || !formik.values.description}

@@ -7,3 +7,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         model = Workspace
         fields = ['workspaceId', 'name', 'description', 'creator']
         read_only_fields = ['workspaceId']
+
+class WorkspaceIdNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Workspace
+        fields=['workspaceId','name']

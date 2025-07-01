@@ -4,8 +4,10 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { QueryClientTanstack } from "./tanstack-provider/QueryClientTanstack"
 import { Suspense } from "react"
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast"
 import LoadingScreen from "./LoadingScreen/LoadingScreen"
+import ConditionalLayout from "./ConditionalLayout"
+import { StoreProvider } from "@/redux/StoreProvider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -21,11 +23,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gray-900`}>
         <QueryClientTanstack>
-          {children}
-          <Toaster position="top-right"/>
-          <Suspense fallback={<LoadingScreen/>}></Suspense>
+          <StoreProvider>
+            <ConditionalLayout>
+              <Suspense fallback={<LoadingScreen />}>
+                {children}
+              </Suspense>
+            </ConditionalLayout>
+          </StoreProvider>
+          <Toaster position="top-right" />
         </QueryClientTanstack>
       </body>
     </html>

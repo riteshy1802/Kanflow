@@ -12,8 +12,8 @@ import { Download, Pen, Trash2, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
 import { useQuery } from "@tanstack/react-query"
-import { useSearchParams } from "next/navigation"
-import { get, post } from "@/actions/common"
+import { useParams } from "next/navigation"
+import { post } from "@/actions/common"
 import { GET_WORKSPACE } from "@/constants/API_Endpoints"
 import { Skeleton } from "./ui/skeleton"
 
@@ -39,10 +39,6 @@ interface Member {
   joinedAt: string
 }
 
-interface KanbanBoardProps {
-  boardId?: string | null
-}
-
 const COLUMNS = [
   { id: "todo", title: "TO DO", color: "bg-gray-500" },
   { id: "in-progress", title: "IN PROGRESS", color: "bg-yellow-500" },
@@ -51,13 +47,13 @@ const COLUMNS = [
   { id: "done", title: "DONE", color: "bg-green-500" },
 ]
 
-export function KanbanBoard({ boardId }: KanbanBoardProps) {
+export function KanbanBoard() {
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks")
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isEditingName, setIsEditingName] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
-  const searchParams = useSearchParams();
-  const workspaceId = searchParams.get('workspace_id');
+  const params = useParams()
+  const workspaceId = params.workspaceId as string
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "1",
@@ -218,7 +214,7 @@ export function KanbanBoard({ boardId }: KanbanBoardProps) {
                 isFetchingWorkspaceData ? 
                   <Skeleton className="h-8 w-72 rounded-md bg-gray-600/50"/>
                 :
-                  <div className="w-full flex items-center">
+                  <div className="w-full flex gap-2 items-center">
                     <h1 className="text-2xl font-bold text-gray-100">{workspaceData?.name}</h1>
                     <Pen
                       onClick={() => setIsEditingName(true)}

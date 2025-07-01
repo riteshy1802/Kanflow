@@ -6,6 +6,7 @@ from api.serializers.workspace_serializer import WorkspaceSerializer
 from api.middlewares.auth_middleware import jwt_authentication
 from api.models.user import User
 from api.models.team_members import TeamMembers
+from api.serializers.workspace_serializer import WorkspaceIdNameSerializer
 
 @api_view(['POST'])
 @jwt_authentication
@@ -105,3 +106,25 @@ def invite_team_members(request):
     except Exception as e:
         print("Error while adding team members:", str(e))
         return Response({"success":False, "message":"Failed to add team members", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+@jwt_authentication
+def get_all_workspaces(request):
+    try:
+        user_id=request.user_id
+        user = User.objects.get(userId=user_id)
+        my_workspaces = Workspace.objects.filter(creator=user).values("workspaceId", "name")  #I am the owner
+        shared_workspace_ids = TeamMembers.objects.filter(userId=user).exclude(workspaceId__creator=user).values_list("workspaceId",flat=True)
+        shared_workspaces = Workspace.objects.filter(workspaceId__in=shared_workspace_ids).values("workspaceId", "name")
+
+        owned_serialized = WorkspaceIdNameSerializer(my_workspaces,many=True).data
+        shared_serialized = WorkspaceIdNameSerializer(shared_workspaces,many=True).data
+
+        payload = {
+            "my_workspaces":owned_serialized,
+            "shared_workspaces":shared_serialized
+        }
+        return Response({"success":True, "message":"Workspace data found!", "payload":payload}, status=drf_status.HTTP_200_OK)
+    except Exception as e:
+        print("Error while getting workspaces data for app sidebar:", str(e))
+        return Response({"success":False, "message":"Failed to fetch all workspaces", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
