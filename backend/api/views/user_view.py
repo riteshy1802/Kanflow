@@ -8,6 +8,8 @@ from api.middlewares.auth_middleware import jwt_authentication
 from django.conf import settings
 import traceback
 from api.serializers.user_serializer import UserSerializer
+from api.models.team_members import TeamMembers
+from api.models.notifications import Notifications
 
 @api_view(["POST"])
 def register(request):
@@ -41,6 +43,16 @@ def register(request):
             samesite=settings.COOKIE_SETTINGS['samesite'],
             max_age=settings.COOKIE_SETTINGS['max_age']
         )
+
+        team_members = TeamMembers.objects.filter(email=email, userId__isnull=True)
+        for tm in team_members:
+            tm.userId = user
+        TeamMembers.objects.bulk_update(team_members, ['userId'])
+
+        notifications = Notifications.objects.filter(to_email=email, toUser__isnull=True)
+        for notif in notifications:
+            notif.toUser = user
+        Notifications.objects.bulk_update(notifications, ['toUser'])
 
         return res
     except Exception as e:
