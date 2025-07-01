@@ -10,4 +10,5 @@ export const createWorkspaceSchema = Yup.object().shape({
   name: Yup.string().required("Project name is required"),
   description: Yup.string().required("Project description is required"),
   team_members: Yup.array().of(inviteMember).notRequired(),
+  message:Yup.string().notRequired(),
 });

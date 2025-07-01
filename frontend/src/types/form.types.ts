@@ -17,12 +17,14 @@ export interface Member{
 }
 
 export interface InviteMembers{
-    workspaceId:string | null,
-    team_members:Member[]
+    workspaceId:string | null ,
+    team_members:Member[],
+    message?:string
 }
 
 export interface createWorkspace{
     name:string,
     description:string
-    team_members?:Member[]
+    team_members?:Member[],
+    message?:string
 }

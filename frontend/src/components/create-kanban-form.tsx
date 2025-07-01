@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -87,7 +87,8 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
     initialValues:{
       name:"",
       description:"",
-      team_members:[]
+      team_members:[],
+      message:""
     },
     validationSchema:createWorkspaceSchema,
     onSubmit:async(values)=>handleSubmitWorkspaceCreation(values)
@@ -97,6 +98,12 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
     const filteredTeamMembers = formik.values.team_members.filter((member:Member)=>member.email!=email)
     formik.setFieldValue("team_members",filteredTeamMembers);
   }
+
+  useEffect(()=>{
+    if(formik.values.team_members.length===0){
+      formik.setFieldValue("message","");
+    }
+  },[formik.values.team_members])
 
 
   return (
@@ -213,16 +220,22 @@ export function CreateKanbanForm({ onClose }: CreateKanbanFormProps) {
               </div>
             )}
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="message" className="text-gray-200 text-xs">
+              Message
+            </Label>
+            <Textarea
+              id="message"
+              value={formik.values.message}
+              disabled={formik.values.team_members.length===0}
+              onChange={formik.handleChange}
+              placeholder="Give a message to your invitees... (Optional)"
+              onBlur={formik.handleBlur}
+              className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
+            />
+          </div>
 
           <div className="flex gap-3">
-            {/* <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="border-gray-600 cursor-pointer text-gray-200 hover:bg-gray-700 bg-transparent"
-            >
-              Cancel
-            </Button> */}
             <Button
               type="submit"
               disabled={isCreatingWorkspace || !formik.values.name || !formik.values.description}

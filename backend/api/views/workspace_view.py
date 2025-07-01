@@ -1,21 +1,13 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status as drf_status
-from api.models.workspace import Workspace
-from api.serializers.workspace_serializer import WorkspaceSerializer
 from api.middlewares.auth_middleware import jwt_authentication
-from api.models.user import User
-from api.models.team_members import TeamMembers
-from api.serializers.workspace_serializer import WorkspaceIdNameSerializer
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status as drf_status
 from api.models.workspace import Workspace
-from api.serializers.workspace_serializer import WorkspaceSerializer
-from api.middlewares.auth_middleware import jwt_authentication
-from api.models.user import User
 from api.models.team_members import TeamMembers
+from api.models.user import User
+from api.models.notifications import Notifications
+from api.models.message import Message
+from api.serializers.workspace_serializer import WorkspaceSerializer
 from api.serializers.workspace_serializer import WorkspaceIdNameSerializer
 
 @api_view(['POST'])
@@ -24,12 +16,13 @@ def create_workspace(request):
     try:
         creator = request.user
         team_members = request.data.get("team_members", [])
-        
+        message_content = request.data.get("message", None)
+
         workspace_data = {
             "name": request.data.get("name"),
             "description": request.data.get("description"),
         }
-        
+
         serializer = WorkspaceSerializer(data=workspace_data)
         if serializer.is_valid():
             workspace = serializer.save(creator=creator)
@@ -47,10 +40,15 @@ def create_workspace(request):
                 )
             )
 
+            msg_obj = None
+            if message_content:
+                msg_obj = Message.objects.create(content=message_content)
+
             for member in team_members:
-                if member["email"] == creator.email:
-                    continue
                 email = member["email"]
+                if email == creator.email:
+                    continue
+
                 privilege = member.get("privilege", "user")
                 status = member.get("status", "pending")
 
@@ -65,26 +63,36 @@ def create_workspace(request):
                         status=status
                     )
                 )
-            
+
+                Notifications.objects.create(
+                    fromUser=creator,
+                    workspaceId=workspace,
+                    toUser=user if user else None,
+                    to_email=None if user else email,
+                    type="request",
+                    messageId=msg_obj
+                )
+
             TeamMembers.objects.bulk_create(team_objs)
 
             return Response({
-                "success": True, 
-                "message": "Workspace created successfully and members added", 
-                "payload": WorkspaceSerializer(workspace).data 
+                "success": True,
+                "message": "Workspace created successfully with members and notifications",
+                "payload": WorkspaceSerializer(workspace).data
             }, status=drf_status.HTTP_201_CREATED)
+
         else:
             return Response({
-                "success": False, 
-                "message": "Invalid data", 
+                "success": False,
+                "message": "Invalid data",
                 "errors": serializer.errors
             }, status=drf_status.HTTP_400_BAD_REQUEST)
-            
+
     except Exception as e:
         print("Error while creating Workspace:", str(e))
         return Response({
-            "success": False, 
-            "message": "Workspace creation failed", 
+            "success": False,
+            "message": "Workspace creation failed",
             "payload": {}
         }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -103,22 +111,28 @@ def get_workspace(request):
     except Exception as e:
         print("Error: while getting Workspace : ", str(e))
         return Response({"success": False, "message": "Failed to get Workspace data", "payload": {}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
 @api_view(['POST'])
 @jwt_authentication
 def invite_team_members(request):
     try:
-        data=request.data
-        print("Invites : ", data)
-        workspace_id=data.get('workspaceId')
+        data = request.data
+        workspace_id = data.get('workspaceId')
         workspace = Workspace.objects.get(workspaceId=workspace_id)
-        team_members = data.get('team_members')
+        team_members = data.get('team_members', [])
+        message_content = data.get('message')
         team_objs = []
+
+        msg_obj = Message.objects.create(content=message_content) if message_content else None
+
         for member in team_members:
-            email=member['email']
-            privilege=member['privilege']
-            status=member['status']
-            user=User.objects.filter(email=email).first()
+            email = member['email']
+            if email.lower() == request.user.email.lower():
+                continue  # skip inviting yourself
+
+            privilege = member['privilege']
+            status = member['status']
+            user = User.objects.filter(email=email).first()
 
             team_objs.append(
                 TeamMembers(
@@ -129,12 +143,27 @@ def invite_team_members(request):
                     status=status
                 )
             )
+
+            Notifications.objects.create(
+                fromUser=request.user,
+                workspaceId=workspace,
+                toUser=user if user else None,
+                to_email=email if not user else None,
+                type="request",
+                messageId=msg_obj
+            )
+
         TeamMembers.objects.bulk_create(team_objs)
         return Response({"success": True, "message": "Invites sent successfully"}, status=drf_status.HTTP_201_CREATED)
+
     except Exception as e:
         print("Error while adding team members:", str(e))
-        return Response({"success":False, "message":"Failed to add team members", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+        return Response({
+            "success": False,
+            "message": "Failed to add team members",
+            "payload": {}
+        }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 @jwt_authentication
 def get_all_workspaces(request):

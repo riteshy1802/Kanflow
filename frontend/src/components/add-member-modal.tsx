@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +16,7 @@ import { post } from "@/actions/common"
 import { SEND_INVITE } from "@/constants/API_Endpoints"
 import { useMutation } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
+import { Textarea } from "./ui/textarea"
 
 interface AddMemberModalProps {
   onClose: () => void
@@ -58,12 +59,19 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
 
   const formik = useFormik<InviteMembers>({
     initialValues: {
-      workspaceId: workspaceId,
-      team_members: []
+      workspaceId: Array.isArray(workspaceId) ? workspaceId[0] : (workspaceId || null),
+      team_members: [],
+      message:""
     },
     validationSchema: InviteMembersSchema,
     onSubmit: (values) => handleInvitesSend(values)
   })
+
+  useEffect(()=>{
+    if(formik.values.team_members.length===0){
+      formik.setFieldValue("message","");
+    }
+  },[formik.values.team_members])
 
   const handleAddMember = () => {
     if (!emailRegex.test(currentEmail)) {
@@ -158,6 +166,20 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
               </div>
             </div>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="message" className="text-gray-200 text-xs">
+              Message
+            </Label>
+            <Textarea
+              id="message"
+              value={formik.values.message}
+              onChange={formik.handleChange}
+              disabled={formik.values.team_members.length===0}
+              placeholder="Give a message to your invitees... (Optional)"
+              onBlur={formik.handleBlur}
+              className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
+            />
+          </div>
 
           <div className="w-full flex gap-2 ml-auto">
             <Button
