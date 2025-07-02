@@ -14,7 +14,7 @@ import { InviteMembers, Member } from "@/types/form.types"
 import toast from "react-hot-toast"
 import { post } from "@/actions/common"
 import { SEND_INVITE } from "@/constants/API_Endpoints"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { Textarea } from "./ui/textarea"
 
@@ -27,6 +27,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
   const [currentRole, setCurrentRole] = useState<"admin" | "user">("user")
   const [error, setError] = useState("")
   const {workspaceId} = useParams()
+  const queryClient = useQueryClient();
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -46,7 +47,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
       if (already_in_team > 0) messages.push(`${already_in_team} in team`);
 
       const finalMsg = `Invites sent: ${messages.join(", ")}`;
-
+      queryClient.invalidateQueries({queryKey:['team_members',workspaceId]})
       toast.success(finalMsg);
       
       console.log("Invites sent successfully!");

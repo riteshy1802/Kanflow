@@ -10,6 +10,7 @@ from api.models.message import Message
 from api.serializers.workspace_serializer import WorkspaceSerializer
 from api.serializers.workspace_serializer import WorkspaceIdNameSerializer
 from django.utils import timezone
+from api.utils.user_utils import is_user_admin
 
 @api_view(['POST'])
 @jwt_authentication
@@ -137,6 +138,13 @@ def invite_team_members(request):
         team_members = data.get('team_members', [])
         message_content = data.get('message')
 
+        if not is_user_admin(request.user_id, workspace_id):
+            return Response({
+                "success": False,
+                "message": "Only admins can invite members.",
+                "payload": {}
+            }, status=drf_status.HTTP_403_FORBIDDEN)
+
         msg_obj = Message.objects.create(content=message_content) if message_content else None
 
         invite_summary = {
@@ -228,7 +236,13 @@ def get_all_workspaces(request):
         user_id=request.user_id
         user = User.objects.get(userId=user_id)
         my_workspaces = Workspace.objects.filter(creator=user).values("workspaceId", "name")  #I am the owner
-        shared_workspace_ids = TeamMembers.objects.filter(userId=user).exclude(workspaceId__creator=user).values_list("workspaceId",flat=True)
+        shared_workspace_ids = TeamMembers.objects.filter(
+            userId=user,
+            status=TeamMembers.Status.ACCEPTED
+        ).exclude(
+            workspaceId__creator=user
+        ).values_list("workspaceId", flat=True)
+
         shared_workspaces = Workspace.objects.filter(workspaceId__in=shared_workspace_ids).values("workspaceId", "name")
 
         owned_serialized = WorkspaceIdNameSerializer(my_workspaces,many=True).data

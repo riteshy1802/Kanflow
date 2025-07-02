@@ -1,7 +1,7 @@
 import bcrypt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status as drf_status
 from api.models.user import User
 from api.utils.jwt_utils import generate_token,verify_token
 from api.middlewares.auth_middleware import jwt_authentication
@@ -10,6 +10,7 @@ import traceback
 from api.serializers.user_serializer import UserSerializer
 from api.models.team_members import TeamMembers
 from api.models.notifications import Notifications
+from api.utils.user_utils import is_user_admin
 
 @api_view(["POST"])
 def register(request):
@@ -21,7 +22,7 @@ def register(request):
     try:
 
         if User.objects.filter(email=email).exists():
-            return Response({"success":False, "message":"Email already registered!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False, "message":"Email already registered!"}, status=drf_status.HTTP_400_BAD_REQUEST)
         
         hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -33,7 +34,7 @@ def register(request):
         tokens = generate_token(user.userId)
         payload = {"access_token":tokens['access_token']}
 
-        res = Response({"success":True, "message":"Registration successful!","payload":payload}, status=status.HTTP_200_OK)
+        res = Response({"success":True, "message":"Registration successful!","payload":payload}, status=drf_status.HTTP_200_OK)
 
         res.set_cookie(
             key="refresh_token",
@@ -59,7 +60,7 @@ def register(request):
         print("Error :", e)
         traceback.print_exc()
         print("Failed to create user")
-        return Response({"success":False, "message":"Failed to create user","payload":None}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"success":False, "message":"Failed to create user","payload":None}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def login(request):
@@ -70,14 +71,14 @@ def login(request):
     try:
         user = User.objects.get(email=email)
     except:
-        return Response({"success":False, "message":"Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"success":False, "message":"Invalid credentials"}, status=drf_status.HTTP_401_UNAUTHORIZED)
     
     if not bcrypt.checkpw(password.encode(), user.password.encode()):
-        return Response({"success":False, "message":"Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"success":False, "message":"Invalid credentials"}, status=drf_status.HTTP_401_UNAUTHORIZED)
     
     tokens = generate_token(user.userId)
     payload = {"access_token":tokens['access_token']}
-    res = Response({"success":True, "message":"Login successful", "payload":payload}, status=status.HTTP_200_OK)
+    res = Response({"success":True, "message":"Login successful", "payload":payload}, status=drf_status.HTTP_200_OK)
     
     res.set_cookie(
         key="refresh_token",
@@ -93,7 +94,7 @@ def login(request):
 
 @api_view(['POST'])
 def logout(request):
-    res = Response({"success":True, "message":"Logout successful"}, status=status.HTTP_200_OK)
+    res = Response({"success":True, "message":"Logout successful"}, status=drf_status.HTTP_200_OK)
     res.delete_cookie("refresh_token")
     return res
 
@@ -101,16 +102,16 @@ def logout(request):
 def refresh(request):
     refresh_token = request.COOKIES.get("refresh_token")
     if not refresh_token:
-        return Response({"success":False, "message":"Refresh token expired"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success":False, "message":"Refresh token expired"}, status=drf_status.HTTP_400_BAD_REQUEST)
     
     user_id = verify_token(refresh_token, token_type="refresh")
     if user_id in [None, "expired"]:
-        return Response({"success":False, "message":"Refresh token expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"success":False, "message":"Refresh token expired"}, status=drf_status.HTTP_401_UNAUTHORIZED)
     
     tokens = generate_token(user_id)
     payload = {"access_token":tokens['access_token']}
 
-    res = Response({"success":True, "message":"Refreshing token", "payload":payload}, status=status.HTTP_200_OK)
+    res = Response({"success":True, "message":"Refreshing token", "payload":payload}, status=drf_status.HTTP_200_OK)
 
     res.set_cookie(
         key="refresh_token",
@@ -132,17 +133,30 @@ def get_user(request):
             "success": True, 
             "message": "User data found", 
             "payload": user_data
-        }, status=status.HTTP_200_OK)
+        }, status=drf_status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({
             "success": False, 
             "message": "User not found",
             "payload": {}
-        }, status=status.HTTP_404_NOT_FOUND)
+        }, status=drf_status.HTTP_404_NOT_FOUND)
     except Exception as e:
         print(f"Error in get_user: {e}")
         return Response({
             "success": False, 
             "message": "Something went wrong",
             "payload": {}
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@jwt_authentication
+def check_if_admin(request):
+    try:
+        workspace_id = request.data.get('workspaceId')
+        is_admin = is_user_admin(request.user_id, workspace_id)
+
+        return Response({"success": True,"message": "Success response admin/user","payload": {"admin": is_admin}}, status=drf_status.HTTP_200_OK)
+
+    except Exception as e:
+        print("Error checking admin:", e)
+        return Response({"success": False,"message": "Can't find whether admin or user","payload": {"admin": False}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -14,7 +14,7 @@ import { Input } from "./ui/input"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { post } from "@/actions/common"
-import { GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME } from "@/constants/API_Endpoints"
+import { CHECK_PRIVILEGE, GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME } from "@/constants/API_Endpoints"
 import { Skeleton } from "./ui/skeleton"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
 import AvatarTeamSkeleton from "./skeletons/AvatarTeamSkeleton"
@@ -50,6 +50,10 @@ interface Member {
   status:"accepted" | "pending" | "rejected"
 }
 
+interface CheckPrivilege{
+  workspaceId:string
+}
+
 const COLUMNS = [
   { id: "todo", title: "TO DO", color: "bg-gray-500" },
   { id: "in-progress", title: "IN PROGRESS", color: "bg-yellow-500" },
@@ -63,6 +67,7 @@ export function KanbanBoard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isEditingName, setIsEditingName] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
+  const [isAdmin,setIsAdmin] = useState(false);
   const params = useParams()
   const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const workspaceId = params.workspaceId as string
@@ -162,6 +167,26 @@ export function KanbanBoard() {
     sortBy: "lastUpdated",
   })
 
+  const {
+    data,
+    isLoading: checkingPrivilege,
+  } = useQuery({
+    queryKey: ['userPrivilege', workspaceId],
+    queryFn: async () => {
+      const res = await post(CHECK_PRIVILEGE, { workspaceId });
+      return res.payload;
+    },
+    enabled: !!workspaceId,
+  });
+
+  useEffect(() => {
+    if (data) {
+      setIsAdmin(data.admin);
+      console.log("Privilege found Is Admin? : ", data.admin);
+    }
+  }, [data]);
+
+
   const getWorkspaceData = async () => {
     try {
       setNotFound(false);
@@ -216,6 +241,10 @@ export function KanbanBoard() {
       console.log("Some error occured while fetching the team members : ", error);
     }
   }
+
+  useEffect(()=>{
+    console.log("Check privilege : ", checkingPrivilege);
+  },[checkingPrivilege])
 
   // membersData contains : in_team, invited
   const {data:membersData, isLoading:loadingMembersData} = useQuery({
@@ -348,15 +377,26 @@ export function KanbanBoard() {
                     </TooltipContent>
                   </Tooltip>
                 ))}
-                {members.length > 5 && (
+                {membersData?.in_team?.length > 5 && (
                   <Avatar className="h-8 w-8 border-2 border-gray-800">
-                    <AvatarFallback className="bg-gray-600 text-xs text-gray-200">+{members.length - 5}</AvatarFallback>
+                    <AvatarFallback className="bg-gray-600 text-xs text-gray-200">+{membersData?.in_team?.length - 5}</AvatarFallback>
                   </Avatar>
                 )}
               </div>}
-              <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
-                Add Member
-              </Button>
+              <div className="w-full">
+                {
+                  checkingPrivilege ? 
+                  <div className="w-[110px]">
+                    <Skeleton className="w-full max-w-[200px] rounded-md bg-gray-600/50 h-9" />
+                  </div>
+                  :
+                  <>
+                    {isAdmin && <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
+                      Add Member
+                    </Button>}
+                  </>
+                }
+              </div>
             </div>
           </div>
 
@@ -461,9 +501,9 @@ export function KanbanBoard() {
                     {activeTabMembers === "invited" && (!membersData?.invited || membersData.invited.length === 0) && (
                       <div className="flex flex-col items-center mt-5 justify-center">
                         <p className="text-sm text-gray-400">No Invites yet!</p>
-                        <Button onClick={() => setShowAddMember(true)} size={"sm"} className="bg-[#580bdb] px-5 mt-2 hover:bg-[#580bdb]/80 cursor-pointer text-sm text-white">
+                        {isAdmin && <Button onClick={() => setShowAddMember(true)} size={"sm"} className="bg-[#580bdb] px-5 mt-2 hover:bg-[#580bdb]/80 cursor-pointer text-sm text-white">
                           Invite
-                        </Button>
+                        </Button>}
                       </div>
                     )}
                   </div>

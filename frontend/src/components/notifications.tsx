@@ -61,6 +61,7 @@ const Notifications = () => {
       return res;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({queryKey:['all-workspaces']});
       queryClient.invalidateQueries({ queryKey: ['notificationsData-onAppSidebar'] });
     },
   });
@@ -84,12 +85,12 @@ const Notifications = () => {
     console.log(`Accepted invitation ${notification_id}`);
 
     try {
-      await markReadNotificationAsync({ notification_id }); // wait for mark read
+      await markReadNotificationAsync({ notification_id });
       await acceptRejectWorkspaceInviteAsync({
         reaction: "accepted",
         notification_id,
         workspaceId,
-      }); // then send reaction
+      });
     } catch (error) {
       console.log("Failed to process accept flow:", error);
     }

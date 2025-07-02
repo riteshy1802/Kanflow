@@ -234,29 +234,32 @@ export function AppSidebar() {
         <UserProfileSkeletion/>
         :
         <div className="p-2 py-4 border-t border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3 overflow-hidden">
               <Avatar className="h-8 w-8">
-                <AvatarFallback style={{backgroundColor:getColorForName(userData?.name)}} className={`bg-[${getColorForName(userData?.name)}] text-white text-sm font-medium`}>
+                <AvatarFallback
+                  style={{ backgroundColor: getColorForName(userData?.name) }}
+                  className="text-white text-sm font-medium"
+                >
                   {avatarCharacters(userData?.name) || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0 mr-2">
-                <p className="text-xs font-medium truncate text-gray-200">{userData?.name}</p>
-                <p className="text-[0.7rem] text-gray-400 truncate">{userData?.email}</p>
+
+              <div className="flex flex-col min-w-0">
+                <p className="text-xs font-medium text-gray-200 truncate">{userData?.name}</p>
+                <p className="text-[0.7rem] text-gray-400 truncate max-w-[160px]">
+                  {userData?.email}
+                </p>
               </div>
             </div>
+
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
               className="hover:bg-red-500/20 cursor-pointer hover:text-red-400 text-gray-400"
             >
-              {loggingOut?
-                <SpinnerTailwind/>
-                :
-                <LogOut className="h-4 w-4" />
-              }
+              {loggingOut ? <SpinnerTailwind /> : <LogOut className="h-4 w-4" />}
             </Button>
           </div>
         </div>
