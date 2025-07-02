@@ -8,7 +8,7 @@ import { FilterDropdown } from "@/components/filter-dropdown"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Download, Pen, Plus, X } from "lucide-react"
+import { Download, Pen, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -20,6 +20,7 @@ import { avatarCharacters } from "@/functions/AvatarCharacter"
 import AvatarTeamSkeleton from "./skeletons/AvatarTeamSkeleton"
 import TeamMemberCard from "./team-member-card"
 import toast from "react-hot-toast"
+import NotFound from "./NotFound/NotFound"
 
 interface Task {
   id: string
@@ -65,6 +66,7 @@ export function KanbanBoard() {
   const params = useParams()
   const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const workspaceId = params.workspaceId as string
+  const [notFound ,setNotFound] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "1",
@@ -162,18 +164,43 @@ export function KanbanBoard() {
 
   const getWorkspaceData = async () => {
     try {
+      setNotFound(false);
       const res = await post(GET_WORKSPACE, { workspaceId });
+      console.log("API Response:", res);
+      console.log("Workspace data : ", res.payload);
+      setNotFound(false)
       return res.payload;
     } catch (error) {
       console.log("Error while fetching workspace data:", error);
+      setNotFound(true);
+      throw error;
     }
   };
 
+  
   const { data: workspaceData, isLoading: isFetchingWorkspaceData } = useQuery({
     queryKey: ['workspace-data', workspaceId],
     queryFn: getWorkspaceData,
     enabled: !!workspaceId,
+    retry:false
   });
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (!workspaceData && !isFetchingWorkspaceData) {
+      timeout = setTimeout(() => {
+        setNotFound(true);
+      }, 1000);
+    }
+
+    if (workspaceData && !notFound) {
+      setNotFound(false);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [workspaceData, isFetchingWorkspaceData]);
+
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const workspaceNameTrack = workspaceData?.name
@@ -194,7 +221,7 @@ export function KanbanBoard() {
   const {data:membersData, isLoading:loadingMembersData} = useQuery({
     queryKey:['team_members',workspaceId],
     queryFn:handleTeamMembersFetch,
-    enabled:!!workspaceId
+    enabled:!!workspaceId,
   })
 
   useEffect(()=>{
@@ -248,6 +275,10 @@ export function KanbanBoard() {
 
   const getTasksForColumn = (columnId: string) => {
     return tasks.filter((task) => task.status === columnId)
+  }
+
+  if(notFound){
+    return <NotFound/>
   }
 
   return (

@@ -32,7 +32,27 @@ export default function RootLayout({
               </Suspense>
             </ConditionalLayout>
           </StoreProvider>
-          <Toaster position="top-right" />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                fontSize: "14px",
+                padding: "12px 16px",
+                background: "#333",
+                color: "#fff",
+              },
+              success: {
+                style: {
+                  fontSize: "14px",
+                },
+              },
+              error: {
+                style: {
+                  fontSize: "14px",
+                },
+              },
+            }}
+          />
         </QueryClientTanstack>
       </body>
     </html>

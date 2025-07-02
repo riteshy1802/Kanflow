@@ -87,7 +87,7 @@ export function KanbanColumn({
         <button className="w-full cursor-pointer" onClick={()=>setShowAddTask(true)}>
           <div className={`border border-dashed w-full flex items-center justify-center gap-1 border-yellow-600 bg-yellow-600/10 rounded-[6px] te px-4 py-2 text-yellow-600`}>
             <Plus size={18}/>
-            <p className="text-sm">New Task</p>
+            <p className="text-xs">New Task</p>
           </div>
         </button>
       </div>

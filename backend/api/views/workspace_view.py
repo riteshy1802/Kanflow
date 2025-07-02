@@ -9,6 +9,7 @@ from api.models.notifications import Notifications
 from api.models.message import Message
 from api.serializers.workspace_serializer import WorkspaceSerializer
 from api.serializers.workspace_serializer import WorkspaceIdNameSerializer
+from django.utils import timezone
 
 @api_view(['POST'])
 @jwt_authentication
@@ -96,21 +97,35 @@ def create_workspace(request):
             "payload": {}
         }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
 @api_view(['POST'])
 @jwt_authentication
 def get_workspace(request):
     try:
         data = request.data
-        workspaceId=data.get('workspaceId')
-        workspace = Workspace.objects.get(workspaceId=workspaceId)
+        workspace_id = data.get('workspaceId')
+
+        is_team_member = TeamMembers.objects.filter(
+            workspaceId=workspace_id,
+            userId=request.user_id,
+            status=TeamMembers.Status.ACCEPTED
+        ).exists()
+
+        if not is_team_member:
+            return Response({"success": False,"message": "Not a valid/accepted team member","payload": {}}, status=drf_status.HTTP_401_UNAUTHORIZED)
+
+        workspace = Workspace.objects.get(workspaceId=workspace_id)
         workspace_data = WorkspaceSerializer(workspace).data
-        return Response({
-            "success": True, "message": "Workspace data found", "payload": workspace_data}, status=drf_status.HTTP_200_OK)
+
+        return Response({"success": True,"message": "Workspace data found","payload": workspace_data}, status=drf_status.HTTP_200_OK)
+
     except Workspace.DoesNotExist:
-        return Response({"success": False, "message": "Workspace not found","payload": {}}, status=drf_status.HTTP_404_NOT_FOUND)
+        return Response({"success": False,"message": "Workspace not found","payload": {}}, status=drf_status.HTTP_404_NOT_FOUND)
+
     except Exception as e:
-        print("Error: while getting Workspace : ", str(e))
-        return Response({"success": False, "message": "Failed to get Workspace data", "payload": {}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print("Error while getting Workspace:", str(e))
+        return Response({"success": False,"message": "Failed to get workspace data","payload": {}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @jwt_authentication
@@ -121,28 +136,57 @@ def invite_team_members(request):
         workspace = Workspace.objects.get(workspaceId=workspace_id)
         team_members = data.get('team_members', [])
         message_content = data.get('message')
-        team_objs = []
 
         msg_obj = Message.objects.create(content=message_content) if message_content else None
 
-        for member in team_members:
-            email = member['email']
-            if email.lower() == request.user.email.lower():
-                continue  # skip inviting yourself
+        invite_summary = {
+            "already_in_team": [],
+            "re_invited": [],
+            "new_invites": []
+        }
 
+        for member in team_members:
+            email = member['email'].lower()
             privilege = member['privilege']
             status = member['status']
+
+            if email == request.user.email.lower():
+                continue
+
             user = User.objects.filter(email=email).first()
 
-            team_objs.append(
-                TeamMembers(
+            existing_member = TeamMembers.objects.filter(email=email, workspaceId=workspace).first()
+
+            if existing_member:
+                if existing_member.status == TeamMembers.Status.ACCEPTED:
+                    invite_summary["already_in_team"].append(email)
+                    continue
+
+                existing_member.status = TeamMembers.Status.PENDING
+                existing_member.updated_at = timezone.now()
+                existing_member.save()
+                invite_summary["re_invited"].append(email)
+
+                old_notif = Notifications.objects.filter(
+                    to_email=email,
+                    workspaceId=workspace,
+                    type="request",
+                    reaction="pending"
+                ).order_by("-created_at").first()
+
+                if old_notif:
+                    old_notif.reaction = "revoked"
+                    old_notif.save()
+
+            else:
+                TeamMembers.objects.create(
                     workspaceId=workspace,
                     userId=user if user else None,
                     email=email,
                     privilege=privilege,
                     status=status
                 )
-            )
+                invite_summary["new_invites"].append(email)
 
             Notifications.objects.create(
                 fromUser=request.user,
@@ -150,11 +194,23 @@ def invite_team_members(request):
                 toUser=user if user else None,
                 to_email=email,
                 type="request",
-                messageId=msg_obj
+                messageId=msg_obj,
+                reaction="pending"
             )
 
-        TeamMembers.objects.bulk_create(team_objs)
-        return Response({"success": True, "message": "Invites sent successfully"}, status=drf_status.HTTP_201_CREATED)
+        message = "Invites processed."
+        if invite_summary["already_in_team"]:
+            message += f" Already in team: {', '.join(invite_summary['already_in_team'])}."
+        if invite_summary["re_invited"]:
+            message += f" Re-invited: {', '.join(invite_summary['re_invited'])}."
+        if invite_summary["new_invites"]:
+            message += f" New invites sent to: {', '.join(invite_summary['new_invites'])}."
+
+        return Response({
+            "success": True,
+            "message": message,
+            "payload": invite_summary
+        }, status=drf_status.HTTP_200_OK)
 
     except Exception as e:
         print("Error while adding team members:", str(e))
@@ -163,6 +219,7 @@ def invite_team_members(request):
             "message": "Failed to add team members",
             "payload": {}
         }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 
 @api_view(['GET'])
 @jwt_authentication

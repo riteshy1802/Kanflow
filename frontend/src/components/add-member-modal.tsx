@@ -33,14 +33,26 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
   const {mutate:sendInvites, isPending:isSendingInvites} = useMutation({
     mutationKey:['sending-invites'],
     mutationFn:async(payload:InviteMembers) => post(SEND_INVITE, payload),
-    onSuccess:(data)=>{
-      toast.success("Invites sent successfully!")
-      console.log("Invites sent successful!")
-      if(data.success){
-        setCurrentEmail("")
-        setCurrentRole("user")
-        onClose()
-      }
+    onSuccess: (data) => {
+      const payload = data.payload || {};
+
+      const new_invites=payload?.new_invites?.length;
+      const reinvitations=payload?.reinvitations?.length;
+      const already_in_team=payload?.already_in_team?.length
+
+      const messages = [];
+      if (new_invites > 0) messages.push(`${new_invites} new`);
+      if (reinvitations > 0) messages.push(`${reinvitations} re-invited`);
+      if (already_in_team > 0) messages.push(`${already_in_team} in team`);
+
+      const finalMsg = `Invites sent: ${messages.join(", ")}`;
+
+      toast.success(finalMsg);
+      
+      console.log("Invites sent successfully!");
+      setCurrentEmail("");
+      setCurrentRole("user");
+      onClose();
     },
     onError:(error)=>{
       toast.error("Couldn't send invites")
@@ -101,6 +113,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
     const filtered = formik.values.team_members.filter((member) => member.email !== email)
     formik.setFieldValue("team_members", filtered)
   }
+
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

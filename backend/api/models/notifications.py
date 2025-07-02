@@ -12,6 +12,7 @@ class Reaction(models.TextChoices):
     ACCEPTED="accepted"
     REJECTED="rejected"
     PENDING="pending"
+    REVOKED="revoked"
 
 class Notifications(models.Model):
     notification_id = models.UUIDField(
