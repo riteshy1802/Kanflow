@@ -11,6 +11,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notifications
         fields = [
             'notification_id',
+            'type',
             'fromUser',
             'toUser',
             'workspaceId',

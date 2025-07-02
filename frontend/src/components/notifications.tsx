@@ -9,6 +9,7 @@ import { get, post } from "@/actions/common"
 import { ACCEPT_REJECT_WORKSPACE_INVITE, GET_ALL_NOTIFICATIONS, MARK_READ_NOTIFICATION } from "@/constants/API_Endpoints"
 import NotificationsSkelelton from "./skeletons/NotificationsSkelelton"
 import { Notification } from "@/types/form.types"
+import dayjs from "dayjs";
 
 interface MarkReadPayload{
   notification_id:string
@@ -35,9 +36,12 @@ const Notifications = () => {
 
   useEffect(() => {
     if (notificationsData && notificationsData.length > 0) {
-      setNotifications([...notificationsData])
+      const sortedNotifications = [...notificationsData].sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setNotifications(sortedNotifications);
     }
-  }, [notificationsData])
+  }, [notificationsData]);
 
   useEffect(() => {
     console.log("Notifications : ", notificationsData);
@@ -50,6 +54,7 @@ const Notifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notificationsData-onAppSidebar'] });
+      queryClient.invalidateQueries({queryKey:['notificationsData-inside-notifications-page']})
     },
   });
   const markReadNotificationAsync = markReadNotificationMutation.mutateAsync;
@@ -62,7 +67,8 @@ const Notifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey:['all-workspaces']});
-      queryClient.invalidateQueries({ queryKey: ['notificationsData-onAppSidebar'] });
+      queryClient.invalidateQueries({queryKey: ['notificationsData-onAppSidebar']});
+      queryClient.invalidateQueries({queryKey:['notificationsData-inside-notifications-page']})
     },
   });
   const acceptRejectWorkspaceInviteAsync = acceptRejectWorkspaceInviteMutation.mutateAsync;
@@ -134,8 +140,8 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 w-full bg-[#1a1a1a] text-white">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen pt-10 w-full bg-[#1a1a1a] text-white">
+      <div className="max-w-4xl mx-auto px-4 py-6 overflow-y-auto max-h-[calc(100vh-80px)]  scrollbar-hide">
         <div className="flex items-center gap-3 mb-6">
           <Bell className="w-5 h-5 text-[#580BDB]" />
           <h2 className="text-lg font-semibold">Notifications</h2>
@@ -170,7 +176,7 @@ const Notifications = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className={`text-sm truncate ${!notification.is_read ? "font-semibold text-white" : "font-medium text-gray-200"}`}>
-                            Invite to join {notification.workspace_name}
+                            {notification.type==="request" ?  "Access Revoked for" : "Invite to join"} {notification.workspace_name}
                           </h3>
                           {getStatusIcon(notification?.reaction)}
                           {!notification.is_read && notification?.reaction === "pending" && (
@@ -182,7 +188,7 @@ const Notifications = () => {
                           <p className="text-xs text-gray-400 truncate">
                             From {notification.name}{" -"}
                           </p>
-                          <span className="text-xs text-gray-500 flex-shrink-0">{new Date(notification.created_at).toLocaleDateString()}</span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">{dayjs(notification.created_at).format("MMM D, YYYY | HH:mm")}</span>
                         </div>
                       </div>
                     </div>

@@ -46,7 +46,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
       if (reinvitations > 0) messages.push(`${reinvitations} re-invited`);
       if (already_in_team > 0) messages.push(`${already_in_team} in team`);
 
-      const finalMsg = `Invites sent: ${messages.join(", ")}`;
+      const finalMsg = messages.length>0 ? `Invites sent: ${messages.join(", ")}` : "Invite Sent";
       queryClient.invalidateQueries({queryKey:['team_members',workspaceId]})
       toast.success(finalMsg);
       

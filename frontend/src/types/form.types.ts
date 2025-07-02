@@ -33,6 +33,7 @@ export interface Notification {
   notification_id: string
   fromUser: string
   toUser: string
+  type:string
   workspaceId: string
   workspace_name: string
   is_read: boolean

@@ -12,6 +12,7 @@ class TeamMembers(models.Model):
         ACCEPTED = "accepted"
         PENDING = "pending"
         REJECTED = "rejected"
+        REVOKED = "revoked"
 
     member_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)#invite id like.. not using it for now.. can be used in future!
     userId = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="team_members")

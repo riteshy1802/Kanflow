@@ -232,6 +232,7 @@ export function KanbanBoard() {
 
   const [boardName, setBoardName] = useState(workspaceData?.name || "")
 
+
   const handleTeamMembersFetch = async() => {
     try {
       const payload = {workspaceId}
@@ -491,11 +492,11 @@ export function KanbanBoard() {
                       </button>
                     </div>
                     {activeTabMembers === "in_team" && membersData?.in_team?.map((member: Member) => (
-                      <TeamMemberCard key={member.userId} member={member} tab={activeTabMembers} />
+                      <TeamMemberCard key={member.userId} isOwner={membersData.creatorId===member.userId} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
                     ))}
 
                     {activeTabMembers === "invited" && membersData?.invited?.length > 0 && membersData.invited.map((member: Member) => (
-                      <TeamMemberCard key={member.userId || member.member_id} member={member} tab={activeTabMembers} />
+                      <TeamMemberCard key={member.userId || member.member_id} isOwner={false} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
                     ))}
 
                     {activeTabMembers === "invited" && (!membersData?.invited || membersData.invited.length === 0) && (
