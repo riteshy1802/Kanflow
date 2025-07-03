@@ -66,6 +66,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
   const [editedTask, setEditedTask] = useState(task)
   const [editedAssignees, setEditedAssignees] = useState(task.assignees)
   const [editedDueDate, setEditedDueDate] = useState("2025-05-31")
+  const [editedTime, setEditedTime] = useState("10:30:00")
 
   const PriorityIcon = PRIORITY_ICONS[task.priority]
   const priorityColor = PRIORITY_COLORS[task.priority]
@@ -185,6 +186,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
             <span className="text-sm text-gray-400">Status</span>
             <Select
               value={editedTask.status}
+              disabled={!isEditing}
               onValueChange={(value) => {
                 const updatedTask = { ...editedTask, status: value as Task["status"] }
                 setEditedTask(updatedTask)
@@ -210,7 +212,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
             {isEditing ? (
               <Calendar24/>
             ) : (
-              <span className="text-sm text-gray-200">{editedDueDate}</span>
+              <span className="text-sm text-gray-200">{editedDueDate} | {editedTime}</span>
             )}
           </div>
 
@@ -225,7 +227,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
                   onUpdate(updatedTask)
                 }}
               >
-                <SelectTrigger className={`w-32 cursor-pointer text-[0.8rem] h-6 px-2 gap-1 ${priorityColor} border-gray-600`}>
+                <SelectTrigger disabled={!isEditing} className={`w-32 cursor-pointer text-[0.8rem] h-6 px-2 gap-1 ${priorityColor} border-gray-600`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -257,7 +259,20 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-gray-400" />
                 <span className="text-sm text-gray-400">Tags</span>
+                <div className="flex flex-wrap gap-1">
+                    {editedTask.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="text-xs px-2 py-1 rounded-md backdrop-blur-sm bg-white/10 border border-white/20 text-gray-200"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                </div>
               </div>
+            </div>
+            {isEditing && 
               <div className="flex-1 w-full">
                 <Input
                     id="tags"
@@ -267,18 +282,7 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
                     className="bg-slate-800/60 border-slate-600/50 text-slate-100 placeholder-slate-400 focus:border-[#4b06c2]/50 focus:ring-[#4b06c2]/20"
                 />
               </div>
-            </div>
-            <div className="flex flex-wrap gap-1 ml-6">
-              {editedTask.tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="text-xs px-2 py-1 rounded-md backdrop-blur-sm bg-white/10 border border-white/20 text-gray-200"
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -323,6 +327,9 @@ export function TaskDetail({ task, members, onClose, onUpdate }: TaskDetailProps
           </div>
         </div>
       </div>
+      {!isEditing && <div className="w-[100%] px-5 py-4">
+        <Button className="w-full cursor-pointer hover:bg-red-800 bg-red-700 text-sm text-white transition duration-200">Delete Task</Button>
+      </div>}
     </div>
   )
 }

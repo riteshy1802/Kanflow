@@ -129,14 +129,18 @@ const Notifications = () => {
     setExpandedCard(expandedCard === id ? null : id)
   }
 
-  const getStatusIcon = (status?: string | undefined) => {
-    if (status === "accepted") {
-      return <Check className="w-3 h-3 text-green-500" />
+  const getStatusIcon = (typeNotification:string, status?:string) => {
+    console.log("TypeNotification : ", typeNotification);
+    if(typeNotification!=="request"){
+      if (status === "accepted") {
+        return <Check className="w-3 h-3 text-green-500" />
+      }
+      if (status === "rejected") {
+        return <X className="w-3 h-3 text-red-500" />
+      }
+    }else{
+      return null
     }
-    if (status === "rejected") {
-      return <X className="w-3 h-3 text-red-500" />
-    }
-    return null
   }
 
   return (
@@ -178,7 +182,7 @@ const Notifications = () => {
                           <h3 className={`text-sm truncate ${!notification.is_read ? "font-semibold text-white" : "font-medium text-gray-200"}`}>
                             {notification.type==="request" ?  "Access Revoked for" : "Invite to join"} {notification.workspace_name}
                           </h3>
-                          {getStatusIcon(notification?.reaction)}
+                          {getStatusIcon(notification.type, notification?.reaction)}
                           {!notification.is_read && notification?.reaction === "pending" && (
                             <div className="w-1.5 h-1.5 bg-[#580BDB] rounded-full flex-shrink-0"></div>
                           )}
@@ -221,13 +225,15 @@ const Notifications = () => {
                         </div>
                       )}
                       
-                      {notification.reaction === "accepted" && (
-                        <div className="text-xs text-green-500 font-medium px-2">Accepted</div>
-                      )}
-                      
-                      {notification.reaction === "rejected" && (
-                        <div className="text-xs text-red-500 font-medium px-2">Rejected</div>
-                      )}
+                      {notification.type==="info" && <>
+                        {notification.reaction === "accepted" && (
+                          <div className="text-xs text-green-500 font-medium px-2">Accepted</div>
+                        )}
+                        
+                        {notification.reaction === "rejected" && (
+                          <div className="text-xs text-red-500 font-medium px-2">Rejected</div>
+                        )}
+                      </>}
                       
                       <Button
                         onClick={(e) => {

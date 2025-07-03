@@ -43,3 +43,31 @@ export interface Notification {
   created_at: string
   senderEmail: string
 }
+
+export interface Task {
+    workspaceId:string
+    title: string
+    description: string
+    dueDate: string | undefined
+    status: "todo" | "in_progress" | "blocked" | "in_review" | "done"
+    priority: "low" | "medium" | "high"
+    assignees: string[]
+    tags: string[]
+}
+
+
+export interface MemberTypes {
+  member_id: string
+  userId:string | null
+  name: string
+  email: string | null
+  privilege: "admin" | "user",
+  updated_at: string
+  status:"accepted" | "pending" | "rejected"
+}
+
+export interface MembersObject{
+  creatorId:string
+  in_team:MemberTypes[]
+  invited:MemberTypes[]
+}

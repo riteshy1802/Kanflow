@@ -48,7 +48,6 @@ export function KanbanColumn({
   members,
   activeTaskId,
   onTaskClick,
-  onAddTask,
   onTaskUpdate,
 }: KanbanColumnProps) {
   const [showAddTask, setShowAddTask] = useState(false)
@@ -94,7 +93,7 @@ export function KanbanColumn({
 
       {/* Add Task Modal */}
       {showAddTask && (
-        <AddTaskModal columnId={id} members={members} onClose={() => setShowAddTask(false)} onAdd={onAddTask} />
+        <AddTaskModal columnId={id} members={members} onClose={() => setShowAddTask(false)} />
       )}
     </div>
   )

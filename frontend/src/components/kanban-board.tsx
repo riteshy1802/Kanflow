@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Download, Pen, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { post } from "@/actions/common"
 import { CHECK_PRIVILEGE, GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME } from "@/constants/API_Endpoints"
@@ -35,6 +35,22 @@ interface Task {
   createdBy: string
 }
 
+interface Member {
+  member_id: string
+  userId:string | null
+  name: string
+  email: string | null
+  privilege: "admin" | "user",
+  updated_at: string
+  status:"accepted" | "pending" | "rejected"
+}
+
+interface MembersObject{
+  creatorId:string
+  in_team:Member[]
+  invited:Member[]
+}
+
 interface UpdateBoardNameType{
   workspaceNewName:string,
   workspaceId:string
@@ -50,15 +66,11 @@ interface Member {
   status:"accepted" | "pending" | "rejected"
 }
 
-interface CheckPrivilege{
-  workspaceId:string
-}
-
 const COLUMNS = [
   { id: "todo", title: "TO DO", color: "bg-gray-500" },
-  { id: "in-progress", title: "IN PROGRESS", color: "bg-yellow-500" },
+  { id: "in_progress", title: "IN PROGRESS", color: "bg-yellow-500" },
   { id: "blocked", title: "BLOCKED", color: "bg-red-500" },
-  { id: "in-review", title: "IN REVIEW", color: "bg-blue-500" },
+  { id: "in_review", title: "IN REVIEW", color: "bg-blue-500" },
   { id: "done", title: "DONE", color: "bg-green-500" },
 ]
 
@@ -69,8 +81,14 @@ export function KanbanBoard() {
   const [showAddMember, setShowAddMember] = useState(false)
   const [isAdmin,setIsAdmin] = useState(false);
   const params = useParams()
-  const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const workspaceId = params.workspaceId as string
+  // const QueryClient = useQueryClient
+  // const membersInTeam: MembersObject = QueryClient.getQueryData<MembersObject>(['team_members', workspaceId]) ?? {
+  //   creatorId: "",
+  //   in_team: [],
+  //   invited: []
+  // };
+  const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const [notFound ,setNotFound] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([
     {
