@@ -71,3 +71,27 @@ export interface MembersObject{
   in_team:MemberTypes[]
   invited:MemberTypes[]
 }
+
+export interface TaskObject{
+  task_id:string
+  assignees:string[]
+  tags:string[]
+  title:string
+  dueDate:string
+  priority:'high' | 'low' | 'medium'
+  status:string
+}
+
+export interface TaskDetailed{
+  task_id:string
+  assignees:string[]
+  tags:string[]
+  title:string
+  description:string
+  dueDate:string
+  priority:'high' | 'low' | 'medium'
+  status:string,
+  created_at:string
+  update_at:string
+  created_by:string
+}

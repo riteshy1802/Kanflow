@@ -5,39 +5,17 @@ import { TaskCard } from "@/components/task-card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { AddTaskModal } from "./add-task-modal"
-
-interface Task {
-  id: string
-  title: string
-  description: string
-  status: "todo" | "in-progress" | "blocked" | "in-review" | "done"
-  priority: "low" | "medium" | "high"
-  assignees: string[]
-  tags: string[]
-  createdAt: string
-  updatedAt: string
-  createdBy: string
-}
-
-interface Member {
-  id: string
-  name: string
-  email: string
-  avatar: string
-  role: "admin" | "user"
-  joinedAt: string
-}
+import { MembersObject, TaskObject } from "@/types/form.types"
+import TaskCardSkeleton from "./skeletons/TaskCardSkeleton"
 
 interface KanbanColumnProps {
   id: string
   title: string
   color: string
-  tasks: Task[]
-  members: Member[]
+  tasks: TaskObject[]
+  members: MembersObject
+  onTaskClick:(task_id:string)=>void
   activeTaskId: string | null
-  onTaskClick: (task: Task) => void
-  onAddTask: (task: Omit<Task, "id">) => void
-  onTaskUpdate: (task: Task) => void
 }
 
 export function KanbanColumn({
@@ -45,15 +23,13 @@ export function KanbanColumn({
   title,
   color,
   tasks,
-  members,
   activeTaskId,
-  onTaskClick,
-  onTaskUpdate,
+  onTaskClick
 }: KanbanColumnProps) {
   const [showAddTask, setShowAddTask] = useState(false)
-
+  const [addingTask, setAddingTask] = useState(false);
   return (
-    <div className="flex flex-col h-full min-h-screen overflow-auto">
+    <div className="flex flex-col">
       {/* Column Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -73,17 +49,17 @@ export function KanbanColumn({
 
       {/* Tasks */}
       <div className="flex-1 space-y-3 overflow-y-auto min-h-0 pr-2">
-        {tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            members={members}
-            isActive={activeTaskId === task.id}
-            onClick={() => onTaskClick(task)}
-            onUpdate={onTaskUpdate}
-          />
+        {tasks.map((task:TaskObject) => (
+          <div key={task.task_id} onClick={()=>onTaskClick(task.task_id)}>
+            <TaskCard
+              key={task.task_id}
+              task={task}
+              isActive={activeTaskId === task.task_id}
+            />
+          </div>
         ))}
-        <button className="w-full cursor-pointer" onClick={()=>setShowAddTask(true)}>
+        {addingTask && <TaskCardSkeleton/>}
+        <button className="w-full cursor-pointer mb-20" onClick={()=>setShowAddTask(true)}>
           <div className={`border border-dashed w-full flex items-center justify-center gap-1 border-yellow-600 bg-yellow-600/10 rounded-[6px] te px-4 py-2 text-yellow-600`}>
             <Plus size={18}/>
             <p className="text-xs">New Task</p>
@@ -93,7 +69,7 @@ export function KanbanColumn({
 
       {/* Add Task Modal */}
       {showAddTask && (
-        <AddTaskModal columnId={id} members={members} onClose={() => setShowAddTask(false)} />
+        <AddTaskModal columnId={id} setAddingTask={setAddingTask} onClose={() => setShowAddTask(false)} />
       )}
     </div>
   )

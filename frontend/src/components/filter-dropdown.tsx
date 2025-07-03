@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { Filter } from "lucide-react"
 
 interface FilterDropdownProps {
@@ -48,7 +47,7 @@ export function FilterDropdown({ filters, onFiltersChange }: FilterDropdownProps
 
         <div className="p-3 space-y-4">
           {/* Search at top */}
-          <div>
+          {/* <div>
             <label className="text-xs font-medium text-gray-400 mb-2 block">Search Title</label>
             <Input
               value={filters.searchTitle}
@@ -56,7 +55,7 @@ export function FilterDropdown({ filters, onFiltersChange }: FilterDropdownProps
               placeholder="Search tasks..."
               className="h-8 bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400"
             />
-          </div>
+          </div> */}
 
           {/* Filters in horizontal layout */}
           <div className="grid grid-cols-2 gap-4">
@@ -90,7 +89,7 @@ export function FilterDropdown({ filters, onFiltersChange }: FilterDropdownProps
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-xs font-medium text-gray-400 mb-2 block">Time Frame</label>
               <div className="space-y-1">
                 {["all", "week", "month"].map((timeframe) => (
@@ -103,9 +102,9 @@ export function FilterDropdown({ filters, onFiltersChange }: FilterDropdownProps
                   </DropdownMenuItem>
                 ))}
               </div>
-            </div>
+            </div> */}
 
-            <div>
+            <div className="col-span-2">
               <label className="text-xs font-medium text-gray-400 mb-2 block">Sort By</label>
               <div className="space-y-1">
                 {["lastUpdated", "created", "priority"].map((sort) => (

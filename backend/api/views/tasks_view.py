@@ -7,6 +7,8 @@ from api.models.tasks import Tasks
 import uuid
 from api.models.workspace import Workspace
 from api.models.user import User
+from api.serializers.task_serializer import TaskSerializer, TaskSerializerDetailed
+from api.models.team_members import TeamMembers
 
 @api_view(['POST'])
 @jwt_authentication
@@ -183,17 +185,50 @@ def delete_task(request):
             "payload": {}
         }, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-@api_view
+@api_view(['POST'])
 @jwt_authentication
 def get_all_tasks(request):
     try:
         data = request.data
         workspaceId = data.get('workspaceId')
-        workspace = Workspace.objects.filter(workspaceId=workspaceId)
+        workspace = Workspace.objects.filter(workspaceId=workspaceId).first()
         if not workspace:
             return Response({"success":False, "message":"Workspace doesnt exists", "payload":{}}, status=drf_status.HTTP_404_NOT_FOUND)
         tasks = Tasks.objects.filter(workspaceId=workspace)
-        return Response({"success":True, "message":"Tasks fetched successfully", "payload":{tasks:tasks}},status=drf_status.HTTP_201_CREATED)
+        serialized_tasks = TaskSerializer(tasks, many=True)
+        return Response({"success":True, "message":"Tasks fetched successfully", "payload":{"tasks":serialized_tasks.data}},status=drf_status.HTTP_201_CREATED)
     except Exception as e:
         print("Some error occured while fetching all the tasks.!", e)
         return Response({"success":False,"message":"Tasks fetched failed", "payload":{}},status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+def check_user_elgible(workspaceId, userId):
+    teamMember = TeamMembers.objects.get(workspaceId=workspaceId, userId=userId)
+    if teamMember.status=="accepted":
+        return True
+    else:
+        return False
+
+
+@api_view(['POST'])
+@jwt_authentication
+def detail_task(request):
+    try:
+        data = request.data
+        userId = request.user_id
+        taskId = data.get('task_id')
+        workspaceId = data.get('workspaceId')
+        is_valid = check_user_elgible(workspaceId, userId)
+
+        if not is_valid:
+            return Response({"success":False, "message":"User not authorized to get the data!", "payload":{}})
+        
+        task = Tasks.objects.filter(task_id=taskId).first()
+        serialized_task_detailed = TaskSerializerDetailed(task)
+        if not task:
+            return Response({"success":False, "message":"Task doesnt exist", "payload":{}})
+
+        return Response({"success":True, "message":"Detailed task found", "payload":{"task_detail":serialized_task_detailed.data}}, status=drf_status.HTTP_200_OK)
+
+    except Exception as e:
+        print("Some error occured while fetching the detailed task data : ",e)
+        return Response({"success":False, "message":"Failed fetching detailed task", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)

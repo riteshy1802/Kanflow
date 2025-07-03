@@ -22,11 +22,11 @@ import { useParams } from "next/navigation"
 
 interface AddTaskModalProps {
   columnId: string
-  members: MemberTypes[]
   onClose: () => void
+  setAddingTask: (value: boolean) => void
 }
 
-export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) {
+export function AddTaskModal({ columnId, setAddingTask, onClose }: AddTaskModalProps) {
   const [newTag, setNewTag] = useState("")
   const [error, setError] = useState("")
   const params = useParams();
@@ -65,19 +65,23 @@ export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) 
     formik.setFieldValue("assignees", assignees)
   }
 
-  const { mutate: createTask } = useMutation({
+  const { mutate: createTask, isPending:creatingTask } = useMutation({
     mutationKey: ['createTask'],
     mutationFn: async (payload: Task) => {
+      setAddingTask(true);
       console.log("Payload : ", payload)
       const res = await post(CREATE_TASK, payload)
       return res.payload
     },
-    onSuccess: () => {
-      toast.success("Task created!")
+    onSuccess: async() => {
       onClose()
+      toast.success("Task created!")
+      await queryClient.invalidateQueries({queryKey:['allTasks', workspaceId]})
+      setAddingTask(false);
     },
     onError: () => {
       toast.error("Failed to create task!")
+      setAddingTask(false);
     }
   })
 
@@ -100,7 +104,8 @@ export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) 
 
   useEffect(()=>{
     console.log(formik.values);
-  },[formik.values])
+    console.log("Formiik errors : ", formik.errors);
+  },[formik.values, formik.errors])
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -236,7 +241,7 @@ export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) 
                 <SelectValue placeholder="Select assignees" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
-                {membersInTeam?.in_team.map((member:Member) => (
+                {membersInTeam?.in_team.map((member:MemberTypes) => (
                   <SelectItem key={member.userId} value={member.userId!} className="text-gray-100 hover:bg-gray-700">
                     {member.name}
                   </SelectItem>
@@ -314,7 +319,7 @@ export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) 
 
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -328,6 +333,7 @@ export function AddTaskModal({ columnId, members, onClose }: AddTaskModalProps) 
               disabled={!formik.isValid || formik.isSubmitting}
               className="bg-[#4B06C2] flex-1 hover:bg-[#4B06C2]/90 cursor-pointer text-white"
             >
+              {creatingTask && <span className="loader-2"></span>}
               Add Task
             </Button>
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bell, Check, X, Users, ChevronDown, ChevronUp } from "lucide-react"
+import { Bell, Check, X, ChevronDown, ChevronUp, Send, Ban } from "lucide-react"
 import { Button } from "./ui/button"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { get, post } from "@/actions/common"
@@ -131,7 +131,7 @@ const Notifications = () => {
 
   const getStatusIcon = (typeNotification:string, status?:string) => {
     console.log("TypeNotification : ", typeNotification);
-    if(typeNotification!=="request"){
+    if(typeNotification==="request"){
       if (status === "accepted") {
         return <Check className="w-3 h-3 text-green-500" />
       }
@@ -174,13 +174,13 @@ const Notifications = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-[#580BDB] flex items-center justify-center flex-shrink-0">
-                        <Users className="w-4 h-4 text-white" />
+                        {notification.type==="request" ? <Send className="w-4 h-4 text-white" /> : <Ban className="w-4 h-4 text-white" />}
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className={`text-sm truncate ${!notification.is_read ? "font-semibold text-white" : "font-medium text-gray-200"}`}>
-                            {notification.type==="request" ?  "Access Revoked for" : "Invite to join"} {notification.workspace_name}
+                            {notification.type!=="request" ?  "Access Revoked for" : "Invite to join"} {notification.workspace_name}
                           </h3>
                           {getStatusIcon(notification.type, notification?.reaction)}
                           {!notification.is_read && notification?.reaction === "pending" && (
@@ -225,7 +225,7 @@ const Notifications = () => {
                         </div>
                       )}
                       
-                      {notification.type==="info" && <>
+                      {notification.type==="request" && <>
                         {notification.reaction === "accepted" && (
                           <div className="text-xs text-green-500 font-medium px-2">Accepted</div>
                         )}
