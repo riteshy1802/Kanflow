@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { KanbanColumn } from "@/components/kanban-column"
 import { TaskDetail } from "@/components/task-detail"
 import { AddMemberModal } from "@/components/add-member-modal"
@@ -22,19 +22,8 @@ import TeamMemberCard from "./team-member-card"
 import toast from "react-hot-toast"
 import NotFound from "./NotFound/NotFound"
 import BoardSkeleton from "./skeletons/BoardSkeleton"
-
-interface Task {
-  id: string
-  title: string
-  description: string
-  status: "todo" | "in_progress" | "blocked" | "in_review" | "done"
-  priority: "low" | "medium" | "high"
-  assignees: string[]
-  tags: string[]
-  createdAt: string
-  updatedAt: string
-  createdBy: string
-}
+import { ProgressObject, TaskObject, User } from "@/types/form.types"
+import Progress from "./Progress/Progress"
 
 interface Member {
   member_id: string
@@ -77,6 +66,7 @@ const COLUMNS = [
 
 export function KanbanBoard() {
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks")
+  const [isFilterOpen,setIsFilterOpen] = useState<boolean>(false);
   const [openDetailedView, setOpenDetailedView] = useState(false)
   const [currentActiveTask, setCurrentActiveTask] = useState<string>()
   const [isEditingName, setIsEditingName] = useState(false)
@@ -86,7 +76,12 @@ export function KanbanBoard() {
   const workspaceId = params.workspaceId as string
   const [activeTabMembers, setActiveTabMembers] = useState("in_team");
   const [notFound ,setNotFound] = useState(false);
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const userData:User = queryClient.getQueryData<User>(['user']) ?? {
+    userId:"",
+    email:"",
+    name:""
+  } 
   const membersInTeam: MembersObject = queryClient.getQueryData<MembersObject>(['team_members', workspaceId]) ?? {
       creatorId: "",
       in_team: [],
@@ -97,7 +92,6 @@ export function KanbanBoard() {
     severity: "all",
     createdBy: "all",
     searchTitle: "",
-    timeframe: "all",
     sortBy: "lastUpdated",
   })
 
@@ -112,29 +106,56 @@ export function KanbanBoard() {
     }catch(err){
       console.log("Some error occured :",err);
     }
-  }
-
+  }  
+  
   const {data:allTasks, isLoading:fetchingAllTasks} = useQuery({
     queryKey:['allTasks', workspaceId],
     queryFn:handleFetchAllTasks,
     enabled: !!workspaceId,
   })
 
-  const segregatedTasks = allTasks ? allTasks.reduce((acc: Record<string, Task[]>, task: Task) => {
-    const status = task.status.replace('-', '_')
-    if (!acc[status]) {
-      acc[status] = []
-    }
-    acc[status].push(task)
-    return acc
-  }, {}) : {}
+  const filteredAndSegregatedTasks = useMemo(() => {
+    if (!allTasks) return {}
+  
+    const filtered = allTasks.filter((task: TaskObject) => {
+      const matchesTitle = task.title.toLowerCase().includes(filters.searchTitle.toLowerCase())
+      const matchesSeverity = filters.severity === "all" || task.priority === filters.severity
+  
+      const currentUserId = userData?.userId
+      const matchesCreatedBy =
+        filters.createdBy === "all" ||
+        (filters.createdBy === "me" && task.created_by === currentUserId) ||
+        (filters.createdBy === "others" && task.created_by !== currentUserId)
 
-  Object.keys(segregatedTasks).forEach((status) => {
-    segregatedTasks[status].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  })
+  
+      return matchesTitle && matchesSeverity && matchesCreatedBy;
+    })
+  
+    const sorted = filtered.sort((a:TaskObject, b:TaskObject) => {
+      if (filters.sortBy === "lastUpdated") {
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      } else if (filters.sortBy === "created") {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      } else if (filters.sortBy === "priority") {
+        const priorityOrder = { high: 3, medium: 2, low: 1 }
+        return priorityOrder[b.priority] - priorityOrder[a.priority]
+      }
+      return 0
+    })
+  
+    return sorted.reduce((acc: Record<string, TaskObject[]>, task: TaskObject) => {
+      const statusKey = task.status.replace('-', '_')
+      if (!acc[statusKey]) {
+        acc[statusKey] = []
+      }
+      acc[statusKey].push(task)
+      return acc
+    }, {})
+  
+  }, [allTasks, filters, userData.userId])
 
   const {
-    data,
+    data:currentPrivilege,
     isLoading: checkingPrivilege,
   } = useQuery({
     queryKey: ['userPrivilege', workspaceId],
@@ -146,11 +167,11 @@ export function KanbanBoard() {
   });
 
   useEffect(() => {
-    if (data) {
-      setIsAdmin(data.admin);
-      console.log("Privilege found Is Admin? : ", data.admin);
+    if (currentPrivilege) {
+      setIsAdmin(currentPrivilege.admin);
+      console.log("Privilege found Is Admin? : ", currentPrivilege.admin);
     }
-  }, [data]);
+  }, [currentPrivilege]);
 
   const getWorkspaceData = async () => {
     try {
@@ -250,19 +271,32 @@ export function KanbanBoard() {
     }
   }
 
-  // const handleTaskUpdate = (updatedTask: Task) => {
-  //   queryClient.invalidateQueries({ queryKey: ['allTasks', workspaceId] })
-  // }
+  const [progress, setProgress] = useState<ProgressObject[]>([
+    { name: "todo", count: 0, bgColor: "bg-[#697283]/80" },
+    { name: "in_progress", count: 0, bgColor: "bg-[#F0B000]/80" },
+    { name: "blocked", count: 0, bgColor: "bg-[#fa2c36]/80" },
+    { name: "in_review", count: 0, bgColor: "bg-[#2B7FFF]/80" },
+    { name: "done", count: 0, bgColor: "bg-[#00C950]/80" },
+  ]);
 
-  // const handleAddTask = (columnId: string, task: Omit<Task, "id">) => {
-  //   queryClient.invalidateQueries({ queryKey: ['allTasks', workspaceId] })
-  // }
+  const someHasCount = progress.some((item)=>item.count!=0);
 
   const getTasksForColumn = (columnId: string) => {
-    const normalizedColumnId = columnId.replace('-', '_')
-    return segregatedTasks[normalizedColumnId] || []
-  }
+    return filteredAndSegregatedTasks[columnId] || [];
+  };
 
+  useEffect(() => {
+    const updatedProgress = progress.map((col) => ({
+      ...col,
+      count: filteredAndSegregatedTasks[col.name]?.length || 0,
+    }));
+
+    setProgress(updatedProgress);
+  }, [filteredAndSegregatedTasks]);
+
+  useEffect(()=>{
+    console.log("Progress : ", progress);
+  },[progress])
 
   if(notFound){
     return <NotFound/>
@@ -272,7 +306,7 @@ export function KanbanBoard() {
     <>
       <TooltipProvider>
         <div className="h-full overflow-auto flex flex-col" style={{ backgroundColor: "#1D1D1F" }}>
-          <div className="px-6 pb-3 pt-6 border-b border-gray-700/20">
+          <div className="px-6 pb-3 pt-6">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {isEditingName ? (
@@ -306,10 +340,10 @@ export function KanbanBoard() {
                   :
                     <div className="w-full flex gap-2 items-center">
                       <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
-                      <Pen
+                      {isAdmin && <Pen
                         onClick={() => setIsEditingName(true)}
                         className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
-                      />
+                      />}
                     </div>
                 )}
 
@@ -381,22 +415,36 @@ export function KanbanBoard() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {activeTab === "tasks" && (
                   <Tooltip>
                     <TooltipTrigger>
                       <Download className="h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200" />
                     </TooltipTrigger>
-                    <TooltipContent className="bg-gray-800 text-gray-100 border-gray-700">
+                    <TooltipContent className="bg-black text-gray-100 border-gray-700">
                       <p>Export Board as PDF</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {activeTab === "tasks" && <FilterDropdown filters={filters} onFiltersChange={setFilters} />}
+                {activeTab === "tasks" && <FilterDropdown isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} filters={filters} onFiltersChange={setFilters} />}
               </div>
             </div>
           </div>
-
+          <>
+            {fetchingAllTasks ?
+              <div className="px-6">
+                <Skeleton className="h-3 w-full rounded-md bg-gray-600/50"/> : 
+              </div>
+              : 
+              <>
+                {someHasCount &&
+                  <>
+                    {activeTab==="tasks" && <Progress progress={progress}/>}
+                  </>
+                }
+              </>
+            }
+          </>
           <div className="flex-1 min-h-0">
             {activeTab === "tasks" ? (
               <>
@@ -449,22 +497,24 @@ export function KanbanBoard() {
                       Invited
                     </button>
                   </div>
-                  {activeTabMembers === "in_team" && membersData?.in_team?.map((member: Member) => (
-                    <TeamMemberCard key={member.userId} isOwner={membersData.creatorId===member.userId} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
-                  ))}
+                  <div className="mb-6 space-y-3">
+                    {activeTabMembers === "in_team" && membersData?.in_team?.map((member: Member) => (
+                      <TeamMemberCard key={member.userId} privilegeCurrent={currentPrivilege} isOwner={membersData.creatorId===member.userId} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
+                    ))}
 
-                  {activeTabMembers === "invited" && membersData?.invited?.length > 0 && membersData.invited.map((member: Member) => (
-                    <TeamMemberCard key={member.userId || member.member_id} isOwner={false} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
-                  ))}
+                    {activeTabMembers === "invited" && membersData?.invited?.length > 0 && membersData.invited.map((member: Member) => (
+                      <TeamMemberCard key={member.userId || member.member_id} privilegeCurrent={currentPrivilege} isOwner={false} isAdmin={isAdmin} member={member} tab={activeTabMembers} />
+                    ))}
 
-                  {activeTabMembers === "invited" && (!membersData?.invited || membersData.invited.length === 0) && (
-                    <div className="flex flex-col items-center mt-5 justify-center">
-                      <p className="text-sm text-gray-400">No Invites yet!</p>
-                      {isAdmin && <Button onClick={() => setShowAddMember(true)} size={"sm"} className="bg-[#580bdb] px-5 mt-2 hover:bg-[#580bdb]/80 cursor-pointer text-sm text-white">
-                        Invite
-                      </Button>}
-                    </div>
-                  )}
+                    {activeTabMembers === "invited" && (!membersData?.invited || membersData.invited.length === 0) && (
+                      <div className="flex flex-col items-center mt-5 justify-center">
+                        <p className="text-sm text-gray-400">No Invites yet!</p>
+                        {isAdmin && <Button onClick={() => setShowAddMember(true)} size={"sm"} className="bg-[#580bdb] px-5 mt-2 hover:bg-[#580bdb]/80 cursor-pointer text-sm text-white">
+                          Invite
+                        </Button>}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

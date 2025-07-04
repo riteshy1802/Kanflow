@@ -269,7 +269,7 @@ const Notifications = () => {
                             {notification.message_content}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Invited by: {notification.senderEmail}
+                            {notification.type==="request" ? "Invited by" : "Revoked by"}: {notification.senderEmail}
                           </p>
                         </div>
                       </motion.div>

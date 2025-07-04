@@ -9,6 +9,7 @@ from api.models.workspace import Workspace
 from api.models.user import User
 from api.serializers.task_serializer import TaskSerializer, TaskSerializerDetailed
 from api.models.team_members import TeamMembers
+from django.utils import timezone
 
 @api_view(['POST'])
 @jwt_authentication
@@ -131,6 +132,7 @@ def update_task(request):
                 else:
                     setattr(task, field, data[field])
 
+        task.updated_at = timezone.now()
         task.save()
 
         return Response({

@@ -10,6 +10,12 @@ export interface signUp{
     confirmPassword:string
 }
 
+export interface User{
+  userId:string
+  name:string
+  email:string
+}
+
 export interface Member{
     email:string,
     privilege:"admin"|"user",
@@ -79,7 +85,10 @@ export interface TaskObject{
   title:string
   dueDate:string
   priority:'high' | 'low' | 'medium'
-  status:string
+  status:'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked' 
+  created_at:string
+  updated_at:string
+  created_by:string
 }
 
 export interface TaskDetailed{
@@ -94,4 +103,10 @@ export interface TaskDetailed{
   created_at:string
   update_at:string
   created_by:string
+}
+
+export interface ProgressObject{
+    name:string
+    count:number
+    bgColor:string
 }

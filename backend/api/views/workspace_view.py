@@ -263,7 +263,14 @@ def update_workspace_name(request):
     try:
         data = request.data
         workspaceId = data.get('workspaceId')
+        user_id = request.user_id
         newName = data.get('workspaceNewName')
+        is_admin = is_user_admin(user_id, workspaceId)
+        if not is_admin:
+            return Response({
+                "success": False,
+                "message": "Only Admins have the privilege to update board name",
+            }, status=drf_status.HTTP_401_UNAUTHORIZED)
         workspace = Workspace.objects.filter(workspaceId=workspaceId).first()
         if not workspace:
             # keeping the message empty to not to show on the frontend, toast will be shown for this..

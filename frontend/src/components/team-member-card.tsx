@@ -33,7 +33,8 @@ interface changeRoleType{
     roleChangeEmail:string | null
 }
 
-const TeamMemberCard = ({member, tab, isAdmin,isOwner}:{member:Member, tab:string, isAdmin:boolean, isOwner:boolean}) => {
+
+const TeamMemberCard = ({member, tab, isAdmin,isOwner,privilegeCurrent}:{member:Member, tab:string, isAdmin:boolean, isOwner:boolean, privilegeCurrent:{admin:string}}) => {
     const queryClient = useQueryClient();
     const params = useParams();
     const workspaceId = params.workspaceId as string
@@ -152,7 +153,7 @@ const TeamMemberCard = ({member, tab, isAdmin,isOwner}:{member:Member, tab:strin
                 >
                     {changingPrivilege ? <SpinnerTailwind/> : isOwner ? "Owner" : member.privilege}
                 </span>
-                <div 
+                {privilegeCurrent.admin && <div 
                     className={`p-1 ml-1 rounded-full transition-colors ${
                         isOwner 
                             ? 'cursor-not-allowed opacity-50' 
@@ -166,7 +167,7 @@ const TeamMemberCard = ({member, tab, isAdmin,isOwner}:{member:Member, tab:strin
                         }`} 
                         color='white'
                     />
-                </div>
+                </div>}
             </div>
 
             {isDropdownOpen && !isOwner && (
