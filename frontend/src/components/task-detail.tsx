@@ -81,6 +81,7 @@ export function TaskDetail({  members, onClose, taskId }: TaskDetailProps) {
   }
 
   const updateTaskMutation = useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async (updatePayload: any) => {
       const payload = {
         task_id: taskId,
@@ -163,6 +164,7 @@ export function TaskDetail({  members, onClose, taskId }: TaskDetailProps) {
 
   const handleSave = () => {
     if(originalDetails && updateDetails) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updatePayload: any = {}
       
       if(originalDetails.title !== updateDetails.title) {

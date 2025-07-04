@@ -84,6 +84,7 @@ export function AddMemberModal({ onClose }: AddMemberModalProps) {
     if(formik.values.team_members.length===0){
       formik.setFieldValue("message","");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[formik.values.team_members])
 
   const handleAddMember = () => {

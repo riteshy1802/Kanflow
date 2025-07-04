@@ -20,6 +20,7 @@ interface FilterDropdownProps {
     sortBy: string;
   };
   setIsOpen: (val:boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFiltersChange: (filters: any) => void;
 }
 

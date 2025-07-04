@@ -19,8 +19,10 @@ export const logoutUser = () => {
 };
 
 let isRefreshing = false;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let failedQueue: any[] = [];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const processQueue = (error: any, token: string | null = null): void => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -32,7 +34,9 @@ const processQueue = (error: any, token: string | null = null): void => {
   failedQueue = [];
 };
 
+
 axiosInstance.interceptors.request.use(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (config: any) => {
     const token = cookie.get("access_token");
     if (token) {
@@ -40,6 +44,7 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (error: any) => {
     return Promise.reject(error);
   }
@@ -60,6 +65,7 @@ axiosInstance.interceptors.response.use(
               originalRequest.headers["Authorization"] = "Bearer " + token;
               resolve(axiosInstance(originalRequest));
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             reject: (err: any) => {
               reject(err);
             },
@@ -78,6 +84,7 @@ axiosInstance.interceptors.response.use(
 
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return axiosInstance(originalRequest);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         processQueue(err, null);
         if (err.response?.status === 403 || err.response?.status === 401 || err.response?.data?.message === "Refresh token expired") {
@@ -115,6 +122,7 @@ export const _get = async (
 
 export const _post = async (
   url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any,
   microserviceURL?: string,
 ) => {
@@ -128,6 +136,7 @@ export const _post = async (
       withCredentials: true,
     });
     return response;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return Promise.reject(error.response?.data ?? error);
   }

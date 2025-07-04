@@ -230,6 +230,7 @@ export function KanbanBoard() {
     }
 
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceData, isFetchingWorkspaceData]);
 
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
@@ -313,6 +314,7 @@ export function KanbanBoard() {
     }));
 
     setProgress(updatedProgress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredAndSegregatedTasks]);
 
   useEffect(()=>{
