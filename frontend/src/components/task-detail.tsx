@@ -21,10 +21,8 @@ import toast from "react-hot-toast"
 
 
 interface TaskDetailProps {
-  task: Task
   members: MembersObject
   onClose: () => void
-  onUpdate: (task: Task) => void
   taskId:string | undefined
 }
 
@@ -42,14 +40,20 @@ const STATUS_OPTIONS = [
   { value: "done", label: "Done" },
 ]
 
-export function TaskDetail({ task, members, onClose, taskId }: TaskDetailProps) {
+export function TaskDetail({  members, onClose, taskId }: TaskDetailProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [originalDetails, setOriginalDetails] = useState<TaskDetailed>()
   const [updateDetails, setUpdateDetails] = useState<TaskDetailed>()
   const [enableUpdateButton, setEnableUpdateButton] = useState(false);
-  const [editedDescription, setEditedDescription] = useState(task?.description)
-  const [editedTask, setEditedTask] = useState(task)
-  const [editedAssignees, setEditedAssignees] = useState(task?.assignees)
+
+  const {data:taskDetail, isLoading:fetchingTaskDetail} = useQuery({
+    queryKey:['task-detail', taskId],
+    queryFn:async() => handleTaskDetailFetch(taskId)
+  })
+
+  const [editedDescription, setEditedDescription] = useState(taskDetail?.description)
+  const [editedTask, setEditedTask] = useState(taskDetail)
+  const [editedAssignees, setEditedAssignees] = useState(taskDetail?.assignees)
   const [editedTags, setEditedTags] = useState("")
   const [editedDueDate, setEditedDueDate] = useState<Date | undefined>(undefined)
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -117,11 +121,6 @@ export function TaskDetail({ task, members, onClose, taskId }: TaskDetailProps) 
       console.log("Some error occured while deleting the Task!");
       toast.error("Couldn't delete the task!");
     }
-  })
-
-  const {data:taskDetail, isLoading:fetchingTaskDetail} = useQuery({
-    queryKey:['task-detail', taskId],
-    queryFn:async() => handleTaskDetailFetch(taskId)
   })
 
   useEffect(()=>{

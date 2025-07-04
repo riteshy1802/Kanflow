@@ -50,11 +50,12 @@ export function KanbanColumn({
       {/* Tasks */}
       <div className="flex-1 space-y-3 overflow-y-auto min-h-0 pr-2">
         {tasks.map((task:TaskObject) => (
-          <div key={task.task_id} onClick={()=>onTaskClick(task.task_id)}>
+          <div key={task.task_id}>
             <TaskCard
               key={task.task_id}
               task={task}
               isActive={activeTaskId === task.task_id}
+              onTaskClick={onTaskClick}
             />
           </div>
         ))}

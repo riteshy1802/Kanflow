@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { KanbanColumn } from "@/components/kanban-column"
 import { TaskDetail } from "@/components/task-detail"
 import { AddMemberModal } from "@/components/add-member-modal"
@@ -94,6 +94,27 @@ export function KanbanBoard() {
     searchTitle: "",
     sortBy: "lastUpdated",
   })
+
+  const filterRef = useRef<HTMLDivElement>(null)
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+      setIsFilterOpen(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isFilterOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isFilterOpen])
+
 
   useEffect(()=>{
     console.log("currentActiveTask : ",currentActiveTask);
@@ -432,7 +453,7 @@ export function KanbanBoard() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {activeTab === "tasks" && <FilterDropdown isOpen={isFilterOpen} setIsOpen={setIsFilterOpen} filters={filters} onFiltersChange={setFilters} />}
+                {activeTab === "tasks" && <FilterDropdown setIsOpen={setIsFilterOpen} filters={filters} onFiltersChange={setFilters} />}
               </div>
             </div>
           </div>
@@ -443,10 +464,14 @@ export function KanbanBoard() {
               </div>
               : 
               <>
-                {someHasCount &&
+                {someHasCount ?
                   <>
                     {activeTab==="tasks" && <Progress progress={progress}/>}
                   </>
+                  :
+                  <div className="px-6">
+                    <div className="bg-gray-600/50 rounded-md w-full h-3"></div>
+                  </div>
                 }
               </>
             }

@@ -5,16 +5,20 @@ import { Button } from "@/components/ui/button"
 import { Dot, ChevronsUp, ChevronsDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MembersObject, TaskObject } from "@/types/form.types"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
 import { Skeleton } from "./ui/skeleton"
-
+import { post } from "@/actions/common"
+import { UPDATE_TASK } from "@/constants/API_Endpoints"
+import { useState } from "react"
+import SpinnerTailwind from "@/app/LoadingScreen/SpinnerTailwind"
 
 interface TaskCardProps {
   task: TaskObject
   isActive: boolean
+  onTaskClick : (task_id:string)=>void
 }
 
 const PRIORITY_ICONS = {
@@ -29,8 +33,9 @@ const PRIORITY_COLORS = {
   low: "text-green-400 bg-green-400/20",
 }
 
-export function TaskCard({ task, isActive }: TaskCardProps) {
+export function TaskCard({ task, isActive, onTaskClick }: TaskCardProps) {
   const params = useParams();
+  const [updatingPriority, setUpdatingPriority] = useState(false);
   const workspaceId = params.workspaceId as string
   const queryClient = useQueryClient();
   const membersInTeam: MembersObject = queryClient.getQueryData<MembersObject>(['team_members', workspaceId]) ?? {
@@ -51,32 +56,44 @@ export function TaskCard({ task, isActive }: TaskCardProps) {
     }
     return tag.trim();
   }
-//  onClick={() => handlePriorityChange("high")}
-  // const handleStatusChange = (newStatus: string) => {
-  //   onUpdate({
-  //     ...task,
-  //     status: newStatus as Task["status"],
-  //     updatedAt: new Date().toISOString().split("T")[0],
-  //   })
-  // }
 
-  // const handlePriorityChange = (newPriority: 'high' | 'low' | 'medium') => {
-    // onUpdate({
-    //   ...task,
-    //   priority: newPriority as TaskObject["priority"],
-    //   updatedAt: new Date().toISOString().split("T")[0],
-    // })
-  // }
+  const {mutate:updatePriority} = useMutation({
+    mutationKey:['updating-priority'],
+    mutationFn:async(payload:{task_id:string, priority:string})=>{
+      setUpdatingPriority(true);
+      await post(UPDATE_TASK, payload);
+    },
+    onSuccess:async()=>{
+      console.log("Priority Updated!")
+      await queryClient.invalidateQueries({queryKey:['allTasks', workspaceId]})
+      setUpdatingPriority(false);
+    },
+    onError:()=>{
+      console.log("Some error occured while updating the task");
+      setUpdatingPriority(false);
+    }
+  })
+
+  const handlePriorityUpdate = async(newPriority:string) => {
+    try {
+      if(newPriority===task.priority){
+        return;
+      }
+      updatePriority({task_id:task.task_id, priority:newPriority});
+    } catch (error) {
+      console.log("Update failed!", error);
+    }
+  }
 
   return (
     <div
       className={`p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg ${
         isActive ? "border border-gray-500/50 shadow-lg" : "hover:bg-gray-700/50"
       }`}
+      onClick={()=>onTaskClick(task.task_id)}
       style={{
         backgroundColor: isActive ? "#2a2a2c" : "#242426",
       }}
-      // onClick={onClick}
     >
       <div className="flex flex-wrap gap-1 mb-2">
         {task.tags.slice(0, 5).map((tag) => (
@@ -102,26 +119,50 @@ export function TaskCard({ task, isActive }: TaskCardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="sm" className={`h-6 px-1 gap-1 cursor-pointer ${priorityColor} hover:bg-white/10`}>
-              <PriorityIcon className="h-2 w-2" />
-              <span className="text-[0.6rem] capitalize">{task.priority}</span>
+              {updatingPriority ?
+                <div className="px-4 flex items-center justify-center">
+                  <SpinnerTailwind/>
+                </div>
+                :
+                <>
+                  <PriorityIcon className="h-2 w-2" />
+                  <span className="text-[0.6rem] capitalize">{task.priority}</span>
+                </>
+              }
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="bg-gray-800 border-gray-700">
-            <DropdownMenuItem className="text-gray-100 text-xs cursor-pointer hover:bg-gray-700">
-              <ChevronsUp className="h-2 w-2 text-red-400" />
+          <DropdownMenuContent align="start" className="bg-gray-800 space-y-1 cursor-pointer border border-gray-700 min-w-[100px] py-1">
+            <DropdownMenuItem
+              onClick={() => handlePriorityUpdate("high")}
+              className={`text-gray-100 text-xs cursor-pointer flex items-center gap-2 px-2 py-1 ${
+                task.priority === "high" ? "bg-gray-700/50" : ""
+              } hover:bg-gray-700`}
+            >
+              <ChevronsUp className="h-4 w-4 text-red-400" />
               High
             </DropdownMenuItem>
+
             <DropdownMenuItem
-              className="text-gray-100 text-xs cursor-pointer hover:bg-gray-700"
+              onClick={() => handlePriorityUpdate("medium")}
+              className={`text-gray-100 text-xs cursor-pointer flex items-center gap-2 px-2 py-1 ${
+                task.priority === "medium" ? "bg-gray-700/50" : ""
+              } hover:bg-gray-700`}
             >
-              <Dot className="h-3 w-3 text-yellow-400" />
+              <Dot className="h-4 w-4 text-yellow-400" />
               Medium
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-gray-100 text-xs cursor-pointer hover:bg-gray-700">
-              <ChevronsDown className="h-3 w-3 text-green-400" />
+
+            <DropdownMenuItem
+              onClick={() => handlePriorityUpdate("low")}
+              className={`text-gray-100 cursor-pointer text-xs flex items-center gap-2 px-2 py-1 ${
+                task.priority === "low" ? "bg-gray-700/50" : ""
+              } hover:bg-gray-700`}
+            >
+              <ChevronsDown className="h-4 w-4 text-green-400" />
               Low
             </DropdownMenuItem>
           </DropdownMenuContent>
+
         </DropdownMenu>
       </div>
 

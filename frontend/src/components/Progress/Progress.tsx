@@ -45,7 +45,7 @@ const Progress = ({ progress }: { progress: ProgressObject[] }) => {
                   <span>{upperCaseAndRemoveUnderScores(item.name)}</span>
                 </div>
                 <div className="mt-1">
-                  <strong>{item.count}</strong> Tasks (
+                  <strong>{item.count}</strong> Task{item.count>1 ? 's' : ""} (
                   {percentage.toFixed(1)}%)
                 </div>
               </TooltipContent>
