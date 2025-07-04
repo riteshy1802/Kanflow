@@ -111,7 +111,7 @@ npm run dev
 * Notifications View
 * Task Creation Modal
 
-###🔐 User Authentication: Login & Register
+### 🔐 User Authentication: Login & Register
 Users can register and securely log in to the platform using a modern dark-themed form. Authentication is powered by JWT access and refresh tokens to maintain secure session management.
 
 *Login Form:*
@@ -122,22 +122,22 @@ Users can register and securely log in to the platform using a modern dark-theme
 
 ![image](https://github.com/user-attachments/assets/299c7130-2285-4dc0-b899-cd0a2c2ac95d)
 
-###🏠 Landing 
+### 🏠 Landing 
 After login, users are directed to the landing page showing all available workspaces—both personal and shared. It also provides the ability to create new workspaces.
 
 ![image](https://github.com/user-attachments/assets/e666a05e-954c-4dd8-aac7-542a9a5c4558)
 
-###🧪 Create a Workspace
+### 🧪 Create a Workspace
 Users can create a new workspace by assigning a name and optional description. Upon creation, users become the owner and can invite others.
 
 ![image](https://github.com/user-attachments/assets/7a83cbb1-0438-43ed-a29a-ba772c447e44)
 
-###📋 Kanban Board Interface
+### 📋 Kanban Board Interface
 Each workspace is equipped with a clean Kanban board UI to manage tasks across different stages like To Do, In Progress, In Review, etc.
 
 ![image](https://github.com/user-attachments/assets/f7085bcd-1937-478a-8e7b-0669a61558b0)
 
-###👥 Add Members to Workspace
+### 👥 Add Members to Workspace
 Invite collaborators to your workspace via email. The invited user will receive a notification and must accept to join.
 ![image](https://github.com/user-attachments/assets/106d5b45-d48b-42e4-8c89-01e791ced0a2)
 
@@ -151,7 +151,7 @@ Admins and Owners can:
 
 ![image](https://github.com/user-attachments/assets/67175a44-4730-4c69-bfab-b17398be4b6e)
 
-###✅ Add Tasks with Tags and Assignees
+### ✅ Add Tasks with Tags and Assignees
 Users can create detailed tasks with:
 - Title and Description
 - Due date
@@ -159,16 +159,16 @@ Users can create detailed tasks with:
 
 ![image](https://github.com/user-attachments/assets/806c4f86-4577-4278-924d-011a8de42432)
 
-###📝 Edit Tasks
+### 📝 Edit Tasks
 Each task can be updated after creation. Only authorized users can edit the task details including status, assignees, and tags.
 
 ![image](https://github.com/user-attachments/assets/f2cdadc8-c6ca-467d-adda-f91da04497af)
 
-###🔔 Notification System
+### 🔔 Notification System
 
 ![image](https://github.com/user-attachments/assets/d61d7bf3-18ae-4a0b-89fd-c79a3af25f30)
 
-###🚫 Workspace Access Protection
+### 🚫 Workspace Access Protection
 If a user tries to access a non-existent or unauthorized workspace, a clean fallback UI prevents them with a relevant message.
 
 ![image](https://github.com/user-attachments/assets/f675241d-b4a6-4f36-9f75-48fccd3341eb)
@@ -183,7 +183,7 @@ If a user tries to access a non-existent or unauthorized workspace, a clean fall
 
 ---
 
-###Future Scope :
+### Future Scope :
 -> Integrate Web sockets to enable real time task updates and notifications about access invite or revoke messages.
 -> Add a Export to pdf functionality
 -> Enable users to drag and drop the tasks between the different status columns for UX.
