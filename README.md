@@ -184,8 +184,8 @@ If a user tries to access a non-existent or unauthorized workspace, a clean fall
 ---
 
 ### Future Scope :
--> Integrate Web sockets to enable real time task updates and notifications about access invite or revoke messages.
--> Add a Export to pdf functionality
--> Enable users to drag and drop the tasks between the different status columns for UX.
+- Integrate Web sockets to enable real time task updates and notifications about access invite or revoke messages.
+- Add a Export to pdf functionality
+- Enable users to drag and drop the tasks between the different status columns for UX.
 
 For more details, visit the repo: [https://github.com/riteshy1802/Kanflow](https://github.com/riteshy1802/Kanflow)
