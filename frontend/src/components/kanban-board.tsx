@@ -214,7 +214,7 @@ export function KanbanBoard() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const workspaceNameTrack = workspaceData?.name
 
-  const [boardName, setBoardName] = useState(workspaceData?.name || "")
+  const [boardName, setBoardName] = useState(workspaceData?.name.trim() || "")
 
   const handleTeamMembersFetch = async() => {
     try {
@@ -317,7 +317,13 @@ export function KanbanBoard() {
                       value={boardName}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                          handleUpdateBoardName();
+                          console.log("Workspace name : ", workspaceData?.name)
+                          console.log("Board name : ", boardName);
+                          if(workspaceData?.name===boardName.trim()){
+                            setIsEditingName(false);
+                          }else{
+                            handleUpdateBoardName();
+                          }
                         }
                       }}
                       onChange={(e) => setBoardName(e.target.value)}
