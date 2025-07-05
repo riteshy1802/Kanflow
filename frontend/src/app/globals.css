@@ -90,6 +90,13 @@
   display: none;
 }
 
+html, body, #root {
+  height: auto !important;
+  min-height: 100%;
+  overflow: visible !important;
+  background-color: #1D1D1F !important;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

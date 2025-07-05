@@ -26,34 +26,66 @@ const Progress = ({ progress }: { progress: ProgressObject[] }) => {
               : '';
 
           return (
-            <Tooltip key={item.name} open={isPrintOpen}>
-              <TooltipTrigger className='mb-10' asChild>
-                <motion.div
-                  initial={{ flex: 0 }}
-                  animate={{ flex: item.count }}
-                  transition={{ duration: 3, ease: 'easeInOut' }}
-                  className={`${item.bgColor} ${roundedClass} h-2`}
-                  style={{ minWidth: '1%' }}
-                />
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={0}
-                align="center"
-                className="bg-[#272829]/100 text-white text-[0.6rem] font-bold border border-gray-700 rounded px-3 py-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${item.bgColor}`}
-                  ></span>
-                  <span>{upperCaseAndRemoveUnderScores(item.name)}</span>
-                </div>
-                <div className="mt-1">
-                  <strong>{item.count}</strong> Task{item.count>1 ? 's' : ""} (
-                  {percentage.toFixed(1)}%)
-                </div>
-              </TooltipContent>
-            </Tooltip>
+            <>
+              {isPrintOpen ? <Tooltip key={item.name} open={isPrintOpen}>
+                <TooltipTrigger className={isPrintOpen ?  "mb-10" : ""} asChild>
+                  <motion.div
+                    initial={{ flex: 0 }}
+                    animate={{ flex: item.count }}
+                    transition={{ duration: 3, ease: 'easeInOut' }}
+                    className={`${item.bgColor} ${roundedClass} h-2`}
+                    style={{ minWidth: '1%' }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  sideOffset={0}
+                  align="center"
+                  className="bg-[#272829]/100 text-white text-[0.6rem] font-bold border border-gray-700 rounded px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${item.bgColor}`}
+                    ></span>
+                    <span>{upperCaseAndRemoveUnderScores(item.name)}</span>
+                  </div>
+                  <div className="mt-1">
+                    <strong>{item.count}</strong> Task{item.count>1 ? 's' : ""} (
+                    {percentage.toFixed(1)}%)
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+              :
+              <Tooltip key={item.name}>
+                <TooltipTrigger className={isPrintOpen ?  "mb-10" : ""} asChild>
+                  <motion.div
+                    initial={{ flex: 0 }}
+                    animate={{ flex: item.count }}
+                    transition={{ duration: 3, ease: 'easeInOut' }}
+                    className={`${item.bgColor} ${roundedClass} h-2`}
+                    style={{ minWidth: '1%' }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  sideOffset={0}
+                  align="center"
+                  className="bg-[#272829]/100 text-white text-[0.6rem] font-bold border border-gray-700 rounded px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${item.bgColor}`}
+                    ></span>
+                    <span>{upperCaseAndRemoveUnderScores(item.name)}</span>
+                  </div>
+                  <div className="mt-1">
+                    <strong>{item.count}</strong> Task{item.count>1 ? 's' : ""} (
+                    {percentage.toFixed(1)}%)
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+              }
+            </>
           );
         })}
       </div>

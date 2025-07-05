@@ -311,39 +311,36 @@ export function KanbanBoard() {
     return filteredAndSegregatedTasks[columnId] || [];
   };
 
-  const { mutate: exportPdf } = useMutation({
+  const { mutateAsync: exportPdf } = useMutation({
     mutationKey: ['export', workspaceId],
-    mutationFn: async () =>
-      await postBlob(EXPORT_BOARD, { workspaceId }),
-    onSuccess: (response) => {
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'kanban-board.pdf';
-      a.click();
-
-
-      toast.success('Board downloaded!');
-    },
+    mutationFn: async () => await postBlob(EXPORT_BOARD, { workspaceId }),
     onError: () => {
       toast.error('Failed to download board');
     },
   });
 
+  const handleExportBoard = async () => {
+    router.push(`/workspace/${workspaceId}?print=true`);
+    await new Promise((res) => setTimeout(res, 3000));
 
-  const handleExportBoard = () => {
-    router.push(`/workspace/${workspaceId}?print=true`)
     try {
-      exportPdf();
+      const response = await exportPdf();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kanban-board.pdf';
+      a.click();
+      await new Promise((res) => setTimeout(res, 2000));
+
+      toast.success('Board downloaded!');
     } catch (error) {
-      console.log("Some error occured", error);
-    }finally{
-      router.push(`/workspace/${workspaceId}`)
+      console.error('Export error:', error);
+      toast.error('Download failed');
+    } finally {
+      router.push(`/workspace/${workspaceId}`);
     }
-  }
+  };
 
 
   useEffect(() => {

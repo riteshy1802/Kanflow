@@ -12,7 +12,7 @@ from api.models.team_members import TeamMembers
 from django.utils import timezone
 import asyncio
 from playwright.async_api import async_playwright
-from django.http import FileResponse
+from django.http import StreamingHttpResponse
 import os
 
 @api_view(['POST'])
@@ -239,44 +239,151 @@ def detail_task(request):
         print("Some error occured while fetching the detailed task data : ",e)
         return Response({"success":False, "message":"Failed fetching detailed task", "payload":{}}, status=drf_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-async def generate_pdf_from_url(url, path, cookies):
+import os
+import asyncio
+from playwright.async_api import async_playwright
+
+async def generate_pdf_nextjs_optimized_final(url, path, cookies):
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         context = await browser.new_context()
-
         await context.add_cookies(cookies)
         page = await context.new_page()
-        await page.goto(url, wait_until='domcontentloaded')
 
-        await page.screenshot(path="/tmp/before-ready.png", full_page=True)
-
+        await page.goto(url, wait_until='networkidle')
         await page.wait_for_function("() => window.isPageReady === true", timeout=15000)
+        await page.wait_for_timeout(2000)
+
+        # Inject custom CSS to override layout issues
+        await page.add_style_tag(content="""
+            #__next {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+            }
+            html, body {
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow: visible !important;
+            }
+            main, .main, [role="main"] {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .flex, .d-flex, [class*="flex"] {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+            }
+            .grid, .d-grid, [class*="grid"] {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+            }
+            .container, .container-fluid, [class*="container"] {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .h-screen, .min-h-screen, .max-h-screen {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+            }
+            .overflow-hidden, .overflow-x-hidden, .overflow-y-hidden {
+                overflow: visible !important;
+            }
+            [class*="board"], [class*="kanban"], [class*="task"] {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            [class*="card"], [class*="task"], [class*="item"] {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        """)
+
+        # Scroll page to ensure full render
+        await page.evaluate("""
+            () => {
+                return new Promise(async (resolve) => {
+                    await new Promise(r => setTimeout(r, 1000));
+                    let lastHeight = 0;
+                    let stableCount = 0;
+                    while (stableCount < 3) {
+                        const currentHeight = Math.max(
+                            document.body.scrollHeight,
+                            document.documentElement.scrollHeight
+                        );
+                        if (currentHeight === lastHeight) {
+                            stableCount++;
+                        } else {
+                            stableCount = 0;
+                            lastHeight = currentHeight;
+                        }
+                        window.scrollTo(0, currentHeight);
+                        await new Promise(r => setTimeout(r, 200));
+                        window.scrollTo(0, 0);
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                    window.scrollTo(0, 0);
+                    resolve();
+                });
+            }
+        """)
+
+        # Compute full content height
+        content_height = await page.evaluate("""
+            () => {
+                return Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight
+                );
+            }
+        """)
+
+        print(f"Content height: {content_height}px")
+
+        await page.set_viewport_size({
+            "width": 1280,
+            "height": max(content_height, 1024)
+        })
+
+        await page.wait_for_timeout(1000)
+        await page.screenshot(path="/tmp/debug-nextjs-final.png", full_page=True)
+        print("Screenshot saved: /tmp/debug-nextjs-final.png")
 
         await page.pdf(
             path=path,
-            format="A3",
+            format="A4",
             landscape=True,
             print_background=True,
+            margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
+            prefer_css_page_size=True,
+            display_header_footer=False
         )
 
+        print(f"PDF generated successfully: {path}")
         await browser.close()
-
-
+        return True
+    
 @api_view(['POST'])
 @jwt_authentication
 def export_pdf(request):
     data = request.data
     workspace_id = data.get('workspaceId')
     user_id = request.user_id
-    print(user_id)
-    is_member_of_workspace = TeamMembers.objects.filter(userId=user_id, workspaceId=workspace_id).first()
-    print("Hrllo : ",is_member_of_workspace)
 
-    if not is_member_of_workspace or is_member_of_workspace.status != "accepted":
-        return Response({"success": False, "message": "User not a part of Workspace"}, status=drf_status.HTTP_401_UNAUTHORIZED)
+    is_member = TeamMembers.objects.filter(userId=user_id, workspaceId=workspace_id).first()
+    if not is_member or is_member.status != "accepted":
+        return Response({"success": False, "message": "Unauthorized"}, status=401)
 
     token = request.COOKIES.get("access_token")
-
     cookies = [{
         "name": "access_token",
         "value": token,
@@ -287,11 +394,22 @@ def export_pdf(request):
     }]
 
     base_url = "http://localhost:3000"
-    secret = os.getenv('PRINT_SECRET')
+    secret = os.getenv("PRINT_SECRET")
     url = f"{base_url}/workspace/{workspace_id}?print=true&secret={secret}"
-
     pdf_path = f"/tmp/kanban-{workspace_id}.pdf"
-    asyncio.run(generate_pdf_from_url(url, pdf_path,cookies))
-    print("Success", pdf_path)
 
-    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+    try:
+        success = asyncio.run(generate_pdf_nextjs_optimized_final(url, pdf_path, cookies))
+
+        if success and os.path.exists(pdf_path):
+            file_handle = open(pdf_path, 'rb')
+            response = StreamingHttpResponse(file_handle, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="kanban-{workspace_id}.pdf"'
+            response['Content-Length'] = os.path.getsize(pdf_path)
+            return response
+        else:
+            return Response({"success": False, "message": "PDF generation failed"}, status=500)
+
+    except Exception as e:
+        print("PDF generation error:", e)
+        return Response({"success": False, "message": str(e)}, status=500)
