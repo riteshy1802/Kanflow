@@ -8,7 +8,7 @@ const BoardSkeleton = () => {
         <div className='px-6 pb-10'>
             <div className='grid mb-8 grid-cols-5 gap-5 h-8'>
                 {countSkeletons.map((_,i)=>(
-                    <Skeleton key={i} className='w-full h-10 border-gray-800 bg-gray-600/50'/>
+                    <Skeleton data-testid="skeleton" key={i} className='w-full h-10 border-gray-800 bg-gray-600/50'/>
                 ))}
             </div>
             <div className='grid grid-cols-5 gap-6 h-full'>

@@ -83,7 +83,7 @@ export function AppSidebar() {
 
   const {data:projects, isLoading:fetchingWorkspaces} = useQuery({
     queryKey:['all-workspaces'],
-    queryFn:getAllWorkspaces
+    queryFn:getAllWorkspaces,
   })
 
   useEffect(()=>{

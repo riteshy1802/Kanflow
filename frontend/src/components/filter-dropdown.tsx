@@ -19,7 +19,6 @@ interface FilterDropdownProps {
     searchTitle: string;
     sortBy: string;
   };
-  setIsOpen: (val:boolean) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFiltersChange: (filters: any) => void;
 }
@@ -27,7 +26,6 @@ interface FilterDropdownProps {
 export function FilterDropdown({
   filters,
   onFiltersChange,
-  setIsOpen,
 }: FilterDropdownProps) {
   const defaultFilters = {
     severity: "all",
@@ -61,8 +59,7 @@ export function FilterDropdown({
             <Button
               variant="ghost"
               size="sm"
-              onClick={()=>setIsOpen(true)}
-              className="gap-2 cursor-pointer border border-gray-600 text-[0.8rem] text-gray-400 hover:text-gray-200 hover:bg-gray-700"
+              className="gap-2 cursor-pointer border border-gray-600 text-[0.8rem] text-gray-400 hover:text-gray-200 hover:bg-gray-700/20"
             >
               <Filter size={12} />
               Filter

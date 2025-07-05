@@ -4,17 +4,24 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const access_token = request.cookies.get("access_token")?.value ?? null;
+  const secret = request.nextUrl.searchParams.get("secret");
+  const print = request.nextUrl.searchParams.get("print");
 
-  const publicPaths = [
-    "/login",
-    "/register",
-  ];
+  const publicPaths = ["/login", "/register"];
 
   const isPublicPath = publicPaths.some(
     (publicPath) => path === publicPath || path.startsWith(publicPath + "/")
   );
 
-  if (!isPublicPath && !access_token) {
+  console.log("ENV :", process.env.NEXT_PUBLIC_PRINT_SECRET)
+  console.log("SECRET :",secret);
+
+  const isPrintRequest =
+    path.startsWith("/workspace/") &&
+    print === "true" &&
+    secret === process.env.NEXT_PUBLIC_PRINT_SECRET;
+
+  if (!isPublicPath && !access_token && !isPrintRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

@@ -12,9 +12,9 @@ import { Download, Pen, X } from "lucide-react"
 import { getColorForName } from "@/functions/getAvatarColor"
 import { Input } from "./ui/input"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { post } from "@/actions/common"
-import { CHECK_PRIVILEGE, GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME, GET_ALL_TASKS } from "@/constants/API_Endpoints"
+import { CHECK_PRIVILEGE, GET_ALL_TEAM_MEMBERS, GET_WORKSPACE, UPDATE_WORKSPACE_NAME, GET_ALL_TASKS, EXPORT_BOARD } from "@/constants/API_Endpoints"
 import { Skeleton } from "./ui/skeleton"
 import { avatarCharacters } from "@/functions/AvatarCharacter"
 import AvatarTeamSkeleton from "./skeletons/AvatarTeamSkeleton"
@@ -24,6 +24,7 @@ import NotFound from "./NotFound/NotFound"
 import BoardSkeleton from "./skeletons/BoardSkeleton"
 import { ProgressObject, TaskObject, User } from "@/types/form.types"
 import Progress from "./Progress/Progress"
+import { postBlob } from "@/axios/axios"
 
 interface Member {
   member_id: string
@@ -66,6 +67,9 @@ const COLUMNS = [
 
 export function KanbanBoard() {
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks")
+  const router = useRouter()
+  const searchParams = useSearchParams();
+  const isPrintPage = searchParams.get('print') === "true"
   const [isFilterOpen,setIsFilterOpen] = useState<boolean>(false);
   const [openDetailedView, setOpenDetailedView] = useState(false)
   const [currentActiveTask, setCurrentActiveTask] = useState<string>()
@@ -307,6 +311,41 @@ export function KanbanBoard() {
     return filteredAndSegregatedTasks[columnId] || [];
   };
 
+  const { mutate: exportPdf } = useMutation({
+    mutationKey: ['export', workspaceId],
+    mutationFn: async () =>
+      await postBlob(EXPORT_BOARD, { workspaceId }),
+    onSuccess: (response) => {
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kanban-board.pdf';
+      a.click();
+
+
+      toast.success('Board downloaded!');
+    },
+    onError: () => {
+      toast.error('Failed to download board');
+    },
+  });
+
+
+  const handleExportBoard = () => {
+    router.push(`/workspace/${workspaceId}?print=true`)
+    try {
+      exportPdf();
+    } catch (error) {
+      console.log("Some error occured", error);
+    }finally{
+      router.push(`/workspace/${workspaceId}`)
+    }
+  }
+
+
   useEffect(() => {
     const updatedProgress = progress.map((col) => ({
       ...col,
@@ -320,6 +359,36 @@ export function KanbanBoard() {
   useEffect(()=>{
     console.log("Progress : ", progress);
   },[progress])
+
+  useEffect(() => {
+    if (
+      !fetchingAllTasks &&
+      !isFetchingWorkspaceData &&
+      !loadingMembersData &&
+      !checkingPrivilege &&
+      allTasks &&
+      workspaceData &&
+      membersData &&
+      typeof window !== "undefined"
+    ) {
+      console.log("✅ Marking page as ready - all data loaded");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).isPageReady = true;
+    }
+  }, [
+    fetchingAllTasks,
+    isFetchingWorkspaceData,
+    loadingMembersData,
+    checkingPrivilege,
+    allTasks,
+    workspaceData,
+    membersData
+  ]);
+
+  useEffect(()=>{
+    console.log("IsprintScreen : ", isPrintPage);
+  },[isPrintPage]);
+
 
   if(notFound){
     return <NotFound/>
@@ -369,7 +438,7 @@ export function KanbanBoard() {
                   :
                     <div className="w-full flex gap-2 items-center">
                       <h1 className="text-2xl font-bold text-gray-100">{boardName}</h1>
-                      {isAdmin && <Pen
+                      {isAdmin || isPrintPage && <Pen
                         onClick={() => setIsEditingName(true)}
                         className="inline-block ml-2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200"
                       />}
@@ -411,7 +480,7 @@ export function KanbanBoard() {
                     </div>
                     :
                     <>
-                      {isAdmin && <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
+                      {isAdmin || isPrintPage && <Button onClick={() => setShowAddMember(true)} className="bg-[#580bdb] hover:bg-[#580bdb]/80 cursor-pointer text-xs text-white">
                         Add Member
                       </Button>}
                     </>
@@ -420,7 +489,7 @@ export function KanbanBoard() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            {!isPrintPage && <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <button
                   onClick={() => setActiveTab("tasks")}
@@ -448,16 +517,18 @@ export function KanbanBoard() {
                 {activeTab === "tasks" && (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Download className="h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200" />
+                      <div onClick={()=>handleExportBoard()} className="p-2 rounded-md bg-gray-700/20 hover:bg-gray-600/20 cursor-pointer">
+                        <Download className="h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-200" />
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent className="bg-black text-gray-100 border-gray-700">
                       <p>Export Board as PDF</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {activeTab === "tasks" && <FilterDropdown setIsOpen={setIsFilterOpen} filters={filters} onFiltersChange={setFilters} />}
+                {activeTab === "tasks" && <FilterDropdown filters={filters} onFiltersChange={setFilters} />}
               </div>
-            </div>
+            </div>}
           </div>
           <>
             {fetchingAllTasks ?

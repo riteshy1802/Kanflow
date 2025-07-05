@@ -12,10 +12,10 @@ export function TaskDetailSkeleton() {
       {/* Header */}
       <div className="p-6 border-b border-gray-700/20">
         <div className="flex items-start justify-between mb-4">
-          <Skeleton className="h-8 w-[60%] border-gray-800 bg-gray-600/50"/>
+          <div data-testid="skeleton" className="h-8 w-[60%] border-gray-800 bg-gray-600/50"/>
           <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-8 border-gray-800 bg-gray-600/50"/>
-            <Skeleton className="h-8 w-8 border-gray-800 bg-gray-600/50"/>
+            <Skeleton data-testid="skeleton" className="h-8 w-8 border-gray-800 bg-gray-600/50"/>
+            <Skeleton data-testid="skeleton" className="h-8 w-8 border-gray-800 bg-gray-600/50"/>
           </div>
         </div>
 
@@ -28,26 +28,26 @@ export function TaskDetailSkeleton() {
 
           <div className="flex flex-wrap gap-1 ml-6">
             {[...Array(3)].map((_,i) => (
-              <Skeleton key={i} className="h-8 w-30 border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" key={i} className="h-8 w-30 border-gray-800 bg-gray-600/50"/>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-gray-400" />
             <span className="text-sm text-gray-400">Status</span>
-            <Skeleton className="h-8 w-30 border-gray-800 bg-gray-600/50"/>
+            <Skeleton data-testid="skeleton" className="h-8 w-30 border-gray-800 bg-gray-600/50"/>
           </div>
 
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-400" />
             <span className="text-sm text-gray-400">Due Date</span>
-            <span className="text-sm text-gray-200 flex items-center gap-2"><Skeleton className="h-8 w-36 border-gray-800 bg-gray-600/50"/> | <Skeleton className="h-8 w-30 border-gray-800 bg-gray-600/50"/></span>
+            <span className="text-sm text-gray-200 flex items-center gap-2"><Skeleton data-testid="skeleton" className="h-8 w-36 border-gray-800 bg-gray-600/50"/> | <Skeleton className="h-8 w-30 border-gray-800 bg-gray-600/50"/></span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-400">Priority</span>
-              <Skeleton className="h-8 w-40 border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" className="h-8 w-40 border-gray-800 bg-gray-600/50"/>
             </div>
           </div>
 
@@ -58,7 +58,7 @@ export function TaskDetailSkeleton() {
                 <span className="text-sm text-gray-400">Tags</span>
                 <div className="flex flex-wrap gap-1">
                     {[...Array(4)].map((_,i) => (
-                      <Skeleton key={i} className="h-8 w-20 border-gray-800 bg-gray-600/50"/>
+                      <Skeleton data-testid="skeleton" key={i} className="h-8 w-20 border-gray-800 bg-gray-600/50"/>
                     ))}
                 </div>
               </div>
@@ -78,16 +78,16 @@ export function TaskDetailSkeleton() {
 
           <div className="space-y-4">
             <div className="prose prose-sm max-w-none space-y-2">
-              <Skeleton className="h-5 w-full border-gray-800 bg-gray-600/50"/>
-              <Skeleton className="h-5 w-full border-gray-800 bg-gray-600/50"/>
-              <Skeleton className="h-5 w-full border-gray-800 bg-gray-600/50"/>
-              <Skeleton className="h-5 w-full border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" className="h-5 w-full border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" className="h-5 w-full border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" className="h-5 w-full border-gray-800 bg-gray-600/50"/>
+              <Skeleton data-testid="skeleton" className="h-5 w-full border-gray-800 bg-gray-600/50"/>
             </div>
           </div>
         </div>
       </div>
       <div className="p-5 w-full">
-        <Skeleton className="h-10 w-full border-gray-800 bg-gray-600/50"/>
+        <Skeleton data-testid="skeleton" className="h-10 w-full border-gray-800 bg-gray-600/50"/>
       </div>
     </div>
   )

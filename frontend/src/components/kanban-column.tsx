@@ -29,7 +29,7 @@ export function KanbanColumn({
   const [showAddTask, setShowAddTask] = useState(false)
   const [addingTask, setAddingTask] = useState(false);
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" data-testid="kanban-column">
       {/* Column Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

@@ -3,9 +3,12 @@ import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { useSearchParams } from 'next/navigation';
 
 const Progress = ({ progress }: { progress: ProgressObject[] }) => {
   const total = progress.reduce((sum, item) => sum + item.count, 0);
+  const searchParams = useSearchParams();
+  const isPrintOpen = searchParams.get('print')==="true";
 
   const upperCaseAndRemoveUnderScores = (name: string) =>
     name.toUpperCase().replace(/_/g, ' ');
@@ -23,8 +26,8 @@ const Progress = ({ progress }: { progress: ProgressObject[] }) => {
               : '';
 
           return (
-            <Tooltip key={item.name}>
-              <TooltipTrigger asChild>
+            <Tooltip key={item.name} open={isPrintOpen}>
+              <TooltipTrigger className='mb-10' asChild>
                 <motion.div
                   initial={{ flex: 0 }}
                   animate={{ flex: item.count }}
@@ -34,7 +37,8 @@ const Progress = ({ progress }: { progress: ProgressObject[] }) => {
                 />
               </TooltipTrigger>
               <TooltipContent
-                side="top"
+                side="bottom"
+                sideOffset={0}
                 align="center"
                 className="bg-[#272829]/100 text-white text-[0.6rem] font-bold border border-gray-700 rounded px-3 py-2"
               >

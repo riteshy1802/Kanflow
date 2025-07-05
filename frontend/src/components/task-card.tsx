@@ -90,6 +90,7 @@ export function TaskCard({ task, isActive, onTaskClick }: TaskCardProps) {
       className={`p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-lg ${
         isActive ? "border border-gray-500/50 shadow-lg" : "hover:bg-gray-700/50"
       }`}
+      data-testid="task-card"
       onClick={()=>onTaskClick(task.task_id)}
       style={{
         backgroundColor: isActive ? "#2a2a2c" : "#242426",
@@ -174,6 +175,7 @@ export function TaskCard({ task, isActive, onTaskClick }: TaskCardProps) {
             <div className="flex -space-x-2">
               {[...Array(4)].map((_, i) => (
                 <Skeleton
+                  data-testid="skeleton"
                   key={i}
                   className="h-6 w-6 rounded-full bg-gray-600/50"
                 />

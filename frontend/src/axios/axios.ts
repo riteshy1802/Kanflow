@@ -39,9 +39,21 @@ axiosInstance.interceptors.request.use(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (config: any) => {
     const token = cookie.get("access_token");
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPrint = urlParams.get("print") === "true";
+      const secret = urlParams.get("secret");
+
+      if (isPrint && secret) {
+        config.headers.Authorization = `Bearer ${token}`;
+        return config;
+      }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,6 +61,7 @@ axiosInstance.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
 
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -99,6 +112,39 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const postBlob = async (
+  url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any,
+  microserviceURL: string = ''
+) => {
+  try {
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token') || sessionStorage.getItem('token')
+        : null;
+
+    const config = {
+      responseType: 'blob' as const,
+      withCredentials: true,
+      ...(microserviceURL && {
+        baseURL: `${process.env.NEXT_PUBLIC_API_URL}${microserviceURL}`,
+      }),
+      ...(token && {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    };
+
+    const response = await axiosInstance.post(url, data, config);
+    return response;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
 
 export const _get = async (
   url: string,
